@@ -1,0 +1,813 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="tasks-container animate__animated animate__fadeIn">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card task-card">
+                <div class="card-header">
+                    <h3><i data-feather="check-square"></i> Your Tasks</h3>
+                </div>
+                <div class="card-body">
+                    <form id="new-task-form" class="mb-4">
+                        <div class="mb-3">
+                            <input type="text" name="title" class="form-control" placeholder="New task..." required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="text" name="description" class="form-control" placeholder="Description (optional)">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Task Rank</label>
+                            <input type="hidden" id="taskRank" name="rank" value="E">
+                            <div class="rank-selector">
+                                <div class="rank-option rank-e" data-rank="E" title="Easy">E</div>
+                                <div class="rank-option rank-d" data-rank="D" title="Normal">D</div>
+                                <div class="rank-option rank-c" data-rank="C" title="Hard">C</div>
+                                <div class="rank-option rank-b" data-rank="B" title="Expert">B</div>
+                                <div class="rank-option rank-a" data-rank="A" title="Master">A</div>
+                                <div class="rank-option rank-s" data-rank="S" title="Legend">S</div>
+                                <div class="rank-option rank-s-plus" data-rank="S+" title="Mythic">S+</div>
+                            </div>
+                            <div class="task-limits-info mt-2">
+                                <small class="text-muted">
+                                    <i data-feather="info" class="small-icon"></i> 
+                                    Daily Limits: 3 E-rank tasks + EITHER 1 task up to 2 ranks above your current rank OR 1 task at/below your current rank.
+                                </small>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary hover-sound">
+                                <i data-feather="plus"></i> Add Task
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="task-list">
+                        <h4>Active Tasks</h4>
+                        {% for task in tasks %}
+                            {% if not task.get('completed', False) %}
+                            <div class="task-item animate__animated futuristic-task-item" id="task-{{ task['id'] }}">
+                                <div class="task-content">
+                                    <h5>{{ task['title'] }}</h5>
+                                    {% if task.get('description') %}
+                                    <p class="task-description">{{ task['description'] }}</p>
+                                    {% endif %}
+                                    <div class="task-meta">
+                                        <span class="rank-badge rank-{{ task['rank'].lower() }}">{{ task['rank'] }}</span>
+                                    </div>
+                                </div>
+                                <div class="task-actions">
+                                    <button class="btn btn-success btn-sm hover-sound complete-task" data-task-id="{{ task['id'] }}" title="Complete Task">
+                                        <i data-feather="check"></i> Complete
+                                    </button>
+                                    <button class="btn btn-danger btn-sm hover-sound delete-task" data-task-id="{{ task['id'] }}" title="Delete Task">
+                                        <i data-feather="trash-2"></i> Delete
+                                    </button>
+                                </div>
+                                <!-- Progress indicator for visual feedback when task is being completed -->
+                                <div class="task-progress-indicator"></div>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    <div class="completed-tasks mt-4">
+                        <button class="btn btn-secondary mb-3 hover-sound" type="button" data-bs-toggle="collapse" data-bs-target="#completedTasksList">
+                            <i data-feather="archive"></i> Show Completed Tasks
+                        </button>
+                        <div class="collapse" id="completedTasksList">
+                            {% for task in tasks|sort(attribute='created_at', reverse=True) %}
+                                {% if task.get('completed', False) %}
+                                <div class="task-item completed animate__animated" id="task-{{ task['id'] }}">
+                                    <div class="task-content">
+                                        <h5>{{ task['title'] }}</h5>
+                                        {% if task.get('description') %}
+                                        <p class="task-description">{{ task['description'] }}</p>
+                                        {% endif %}
+                                        <div class="task-meta">
+                                            <span class="rank-badge rank-{{ task['rank'].lower() }}">{{ task['rank'] }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+
+            <div class="card exp-card mt-4">
+                <div class="card-header">
+                    <h4><i data-feather="trending-up"></i> Experience</h4>
+                </div>
+                <div class="card-body">
+                    <div class="stats-item mb-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <label>Monthly EXP (Rank <span id="userRank" class="rank-badge">E</span>)</label>
+                            <span id="monthlyExp">0</span>
+                        </div>
+                        <div class="progress">
+                            <div id="monthlyExpProgress" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="stats-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <label>Lifetime EXP (Level <span id="userLevel">1</span>)</label>
+                            <span id="lifetimeExp">0</span>
+                        </div>
+                        <div class="progress">
+                            <div id="lifetimeExpProgress" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card progress-card mt-4">
+                <div class="card-header">
+                    <h4><i data-feather="bar-chart-2"></i> Progress</h4>
+                </div>
+                <div class="card-body">
+                    <div class="stats-item">
+                        <label>Tasks Completed</label>
+                        <div class="progress">
+                            <div id="progress-bar" class="progress-bar" role="progressbar" 
+                                 style="width: {{ (completed_tasks/total_tasks)*100 if total_tasks > 0 else 0 }}%"></div>
+                        </div>
+                        <span id="completed-tasks-count">{{ completed_tasks }}/{{ total_tasks }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    feather.replace();
+
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+
+
+    // Update error dialog function
+    function showErrorDialog(title, message) {
+        // Create modal if it doesn't exist
+        if (!document.getElementById('errorModal')) {
+            const modalHtml = `
+            <div class="modal fade" id="errorModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="errorModalTitle"></h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body" id="errorModalBody">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        // Set content and show modal
+        document.getElementById('errorModalTitle').textContent = title;
+        document.getElementById('errorModalBody').textContent = message;
+
+        const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+        errorModal.show();
+    }
+
+    // Enhanced task completion with interactive animations
+    async function handleTaskComplete(taskId) {
+        try {
+            const taskElement = document.getElementById(`task-${taskId}`);
+            if (!taskElement) return;
+
+            // Add completing class to show progress indicator animation
+            taskElement.classList.add('completing');
+
+            // Add a futuristic glow effect when starting completion
+            const glowEffect = document.createElement('div');
+            glowEffect.className = 'task-completion-glow';
+            taskElement.appendChild(glowEffect);
+
+            // Play completion sound
+            const completionSound = new Audio('/static/sounds/complete.mp3');
+            completionSound.volume = 0.6;
+            completionSound.play().catch(err => console.log('Sound play error:', err));
+
+            // Simulate scanning animation
+            const progressIndicator = taskElement.querySelector('.task-progress-indicator') || document.createElement('div');
+            if (!progressIndicator.classList.contains('task-progress-indicator')) {
+                progressIndicator.className = 'task-progress-indicator';
+                taskElement.appendChild(progressIndicator);
+            }
+            progressIndicator.style.width = '100%';
+
+            // Create particle effects for completion
+            createCompletionParticles(taskElement);
+
+            // Send API request to complete the task
+            const response = await fetch(`/api/tasks/${taskId}/complete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to complete task');
+            }
+
+            const data = await response.json();
+
+            // Update stats in the background while animations are playing
+            updateStats();
+
+            // Remove action buttons with a fade out effect
+            const actionsDiv = taskElement.querySelector('.task-actions');
+            if (actionsDiv) {
+                actionsDiv.style.opacity = '0';
+                actionsDiv.style.transform = 'translateY(10px)';
+
+                setTimeout(() => {
+                    actionsDiv.remove();
+                }, 300);
+            }
+
+            // Add various animations sequentially
+            setTimeout(() => {
+                // Add completed class for styling
+                taskElement.classList.add('completed');
+
+                // Add visual feedback of task being completed
+                taskElement.classList.add('animate__pulse');
+
+                // Add completed text with typing effect
+                const metaDiv = taskElement.querySelector('.task-meta');
+                if (metaDiv && !metaDiv.querySelector('.text-muted')) {
+                    const completedText = document.createElement('small');
+                    completedText.className = 'text-muted completed-badge';
+                    metaDiv.appendChild(completedText);
+
+                    // Typing effect for "Completed" text
+                    const text = "Completed";
+                    let index = 0;
+                    const typeInterval = setInterval(() => {
+                        completedText.textContent = text.slice(0, index) + (index < text.length ? '|' : '');
+                        index++;
+                        if (index > text.length) {
+                            clearInterval(typeInterval);
+                            completedText.textContent = text;
+                        }
+                    }, 50);
+                }
+
+                // Remove the progress indicator and glow after completion
+                setTimeout(() => {
+                    if (glowEffect && glowEffect.parentNode) {
+                        glowEffect.remove();
+                    }
+                    taskElement.classList.remove('completing');
+                }, 300);
+
+                // Move to completed section with a smooth transition
+                setTimeout(() => {
+                    taskElement.classList.remove('animate__pulse');
+                    taskElement.classList.add('animate__fadeOut');
+
+                    setTimeout(() => {
+                        const completedList = document.getElementById('completedTasksList');
+                        if (completedList) {
+                            taskElement.classList.remove('animate__fadeOut');
+                            taskElement.classList.add('animate__fadeIn');
+                            completedList.appendChild(taskElement);
+
+                            // Show EXP notification with a slight delay
+                            if (data.exp_gained) {
+                                setTimeout(() => {
+                                    showExpNotification(data.exp_gained);
+
+                                    // Trigger confetti celebration
+                                    if (window.confettiCelebration) {
+                                        window.confettiCelebration.startConfetti();
+                                    }
+                                }, 200);
+                            }
+                        }
+
+                        // Final stats update to ensure UI is in sync
+                        updateStats();
+                    }, 500);
+                }, 1000);
+            }, 800);
+
+        } catch (error) {
+            console.error('Error completing task:', error);
+
+            // Remove completing class if there's an error
+            const taskElement = document.getElementById(`task-${taskId}`);
+            if (taskElement) {
+                taskElement.classList.remove('completing');
+                const progressIndicator = taskElement.querySelector('.task-progress-indicator');
+                if (progressIndicator) {
+                    progressIndicator.style.width = '0%';
+                }
+            }
+
+            // Show error dialog
+            showErrorDialog('Error', 'Failed to complete task. Please try again.');
+        }
+    }
+
+    // Create particle effects for task completion
+    function createCompletionParticles(element) {
+        const rect = element.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        // Create particle container if it doesn't exist
+        let particleContainer = document.getElementById('completion-particles');
+        if (!particleContainer) {
+            particleContainer = document.createElement('div');
+            particleContainer.id = 'completion-particles';
+            particleContainer.style.position = 'fixed';
+            particleContainer.style.top = '0';
+            particleContainer.style.left = '0';
+            particleContainer.style.width = '100%';
+            particleContainer.style.height = '100%';
+            particleContainer.style.pointerEvents = 'none';
+            particleContainer.style.zIndex = '9999';
+            document.body.appendChild(particleContainer);
+        }
+
+        // Create particles
+        const colors = [
+            'rgba(138, 43, 226, 0.8)', // Purple
+            'rgba(0, 191, 255, 0.8)',  // Cyan
+            'rgba(255, 215, 0, 0.8)',  // Gold
+            'rgba(50, 205, 50, 0.8)'   // Green
+        ];
+
+        for (let i = 0; i < 20; i++) {
+            const particle = document.createElement('div');
+            particle.style.position = 'absolute';
+            particle.style.width = `${Math.random() * 10 + 5}px`;
+            particle.style.height = particle.style.width;
+            particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            particle.style.borderRadius = '50%';
+            particle.style.top = `${centerY}px`;
+            particle.style.left = `${centerX}px`;
+            particle.style.transform = 'translate(-50%, -50%)';
+            particle.style.boxShadow = `0 0 10px ${particle.style.backgroundColor}`;
+
+            // Animation properties
+            const angle = Math.random() * Math.PI * 2; // Random angle
+            const distance = Math.random() * 100 + 50; // Random distance
+            const duration = Math.random() * 1 + 0.5; // Random duration
+
+            // Set animation
+            particle.style.transition = `all ${duration}s cubic-bezier(0.4, 0, 0.2, 1)`;
+
+            // Add to container
+            particleContainer.appendChild(particle);
+
+            // Trigger animation after a small delay
+            setTimeout(() => {
+                particle.style.top = `${centerY + Math.sin(angle) * distance}px`;
+                particle.style.left = `${centerX + Math.cos(angle) * distance}px`;
+                particle.style.opacity = '0';
+                particle.style.transform = 'translate(-50%, -50%) scale(0.1)';
+
+                // Remove particle after animation completes
+                setTimeout(() => {
+                    if (particle.parentNode) {
+                        particle.parentNode.removeChild(particle);
+                    }
+
+                    // Remove container if it's empty
+                    if (particleContainer.children.length === 0 && particleContainer.parentNode) {
+                        particleContainer.parentNode.removeChild(particleContainer);
+                    }
+                }, duration * 1000);
+            }, 10);
+        }
+    }
+
+    // Handle task deletion
+    async function handleTaskDelete(taskId) {
+        if (!confirm('Are you sure you want to delete this task?')) return;
+
+        try {
+            const response = await fetch(`/api/tasks/${taskId}/delete`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete task');
+            }
+
+            // First update all stats
+            await updateStats();
+
+            const taskElement = document.getElementById(`task-${taskId}`);
+            if (!taskElement) return;
+
+            taskElement.classList.add('animate__fadeOut');
+
+            setTimeout(() => {
+                taskElement.remove();
+                // Update stats again after removal
+                updateStats();
+            }, 500);
+
+        } catch (error) {
+            console.error('Error deleting task:', error);
+        }
+    }
+
+    // Update stats
+    async function updateStats() {
+        try {
+            // Get both responses in parallel
+            const [taskResponse, userResponse] = await Promise.all([
+                fetch('/api/tasks/stats'),
+                fetch('/api/user/stats')
+            ]);
+
+            if (!taskResponse.ok || !userResponse.ok) {
+                throw new Error('Failed to fetch stats');
+            }
+
+            const [taskStats, userStats] = await Promise.all([
+                taskResponse.json(),
+                userResponse.json()
+            ]);
+
+            // Update task progress
+            const progressBar = document.getElementById('progress-bar');
+            const completedTasksCount = document.getElementById('completed-tasks-count');
+
+            if (progressBar && completedTasksCount) {
+                const progress = taskStats.total > 0 ? (taskStats.completed / taskStats.total) * 100 : 0;
+                progressBar.style.width = `${progress}%`;
+                completedTasksCount.textContent = `${taskStats.completed}/${taskStats.total}`;
+            }
+
+            // Update experience displays
+            const elements = {
+                monthlyExp: document.getElementById('monthlyExp'),
+                lifetimeExp: document.getElementById('lifetimeExp'),
+                userRank: document.getElementById('userRank'),
+                userLevel: document.getElementById('userLevel'),
+                monthlyExpProgress: document.getElementById('monthlyExpProgress'),
+                lifetimeExpProgress: document.getElementById('lifetimeExpProgress')
+            };
+
+            // Update text displays
+            if (elements.monthlyExp) elements.monthlyExp.textContent = userStats.monthly_exp;
+            if (elements.lifetimeExp) elements.lifetimeExp.textContent = userStats.lifetime_exp;
+            if (elements.userRank) elements.userRank.textContent = userStats.rank;
+            if (elements.userLevel) elements.userLevel.textContent = userStats.level;
+
+            // Update progress bars with requestAnimationFrame for smooth animation
+            if (elements.monthlyExpProgress) {
+                const progress = userStats.progress || 0;
+                requestAnimationFrame(() => {
+                    elements.monthlyExpProgress.style.width = `${progress}%`;
+                });
+            }
+
+            if (elements.lifetimeExpProgress) {
+                const lifetimeProgress = (userStats.lifetime_exp % 50) / 50 * 100;
+                requestAnimationFrame(() => {
+                    elements.lifetimeExpProgress.style.width = `${lifetimeProgress}%`;
+                });
+            }
+
+        } catch (error) {
+            console.error('Error updating stats:', error);
+        }
+    }
+
+    // Initial stats update
+    updateStats();
+
+    function showExpNotification(expGained) {
+        const notification = document.createElement('div');
+        notification.className = 'exp-notification animate__animated animate__fadeInUp';
+        notification.innerHTML = `
+            <div class="exp-gain">
+                <i data-feather="zap"></i>
+                <span class="exp-text">+${expGained} EXP</span>
+            </div>
+        `;
+        document.body.appendChild(notification);
+        feather.replace();
+
+        setTimeout(() => {
+            notification.classList.remove('animate__fadeInUp');
+            notification.classList.add('animate__fadeOutDown');
+            setTimeout(() => notification.remove(), 1000);
+        }, 2000);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Attach event listeners using event delegation
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.complete-task')) {
+                const btn = e.target.closest('.complete-task');
+                const taskId = btn.dataset.taskId;
+                handleTaskComplete(taskId);
+            } else if (e.target.closest('.delete-task')) {
+                const btn = e.target.closest('.delete-task');
+                const taskId = btn.dataset.taskId;
+                handleTaskDelete(taskId);
+            } else if (e.target.closest('.rank-option')) {
+                const rankOption = e.target.closest('.rank-option');
+                const rank = rankOption.getAttribute('data-rank');
+                document.getElementById('taskRank').value = rank;
+
+
+                // Remove selected class from all options
+                document.querySelectorAll('.rank-option').forEach(option => {
+                    option.classList.remove('selected');
+                });
+
+
+                // Add selected class to clicked option
+                rankOption.classList.add('selected');
+            }
+        });
+
+
+        // Handle form submission
+        const newTaskForm = document.getElementById('new-task-form');
+        if (newTaskForm) {
+            newTaskForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+
+                const formData = new FormData(this);
+                const taskTitle = formData.get('title');
+                const taskDescription = formData.get('description');
+                const taskRank = formData.get('rank');
+
+
+                if (!taskTitle.trim()) {
+                    showErrorDialog('Missing Information', 'Please enter a task title');
+                    return;
+                }
+
+
+                try {
+                    // Check if user can create this task based on daily limits
+                    const limitCheckResponse = await fetch(`/api/tasks/can_create?rank=${taskRank}`);
+                    const limitCheckData = await limitCheckResponse.json();
+
+
+                    if (!limitCheckData.can_create) {
+                        showErrorDialog('Daily Limit Reached', limitCheckData.reason);
+                        return;
+                    }
+
+
+                    // Create the task
+                    const response = await fetch('/api/tasks', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            title: taskTitle,
+                            description: taskDescription,
+                            rank: taskRank
+                        })
+                    });
+
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'Failed to create task');
+                    }
+
+
+                    const task = await response.json();
+
+
+                    // Reset form
+                    this.reset();
+                    document.querySelectorAll('.rank-option').forEach(option => {
+                        option.classList.remove('selected');
+                    });
+                    document.querySelector('.rank-option.rank-e').classList.add('selected');
+                    document.getElementById('taskRank').value = 'E';
+
+
+                    // Add the new task to the UI
+                    addTaskToUI(task);
+
+
+                    // Update stats
+                    updateStats();
+
+
+                } catch (error) {
+                    console.error('Error creating task:', error);
+                    showErrorDialog('Error', error.message || 'Failed to create task. Please try again.');
+                }
+            });
+        }
+    });
+
+
+    // Add a new task to the UI
+    function addTaskToUI(task) {
+        const taskList = document.querySelector('.task-list');
+        if (!taskList) return;
+
+
+        const taskItem = document.createElement('div');
+        taskItem.className = 'task-item animate__animated animate__fadeIn';
+        taskItem.id = `task-${task.id}`;
+
+
+        taskItem.innerHTML = `
+            <div class="task-content">
+                <h5>${task.title}</h5>
+                ${task.description ? `<p class="task-description">${task.description}</p>` : ''}
+                <div class="task-meta">
+                    <span class="rank-badge rank-${task.rank.toLowerCase()}">${task.rank}</span>
+                </div>
+            </div>
+            <div class="task-actions">
+                <button class="btn btn-success btn-sm hover-sound complete-task" data-task-id="${task.id}">
+                    <i data-feather="check"></i> Complete
+                </button>
+                <button class="btn btn-danger btn-sm hover-sound delete-task" data-task-id="${task.id}">
+                    <i data-feather="trash-2"></i> Delete
+                </button>
+            </div>
+        `;
+
+
+        // Insert after the h4 for Active Tasks
+        const activeTasksHeading = taskList.querySelector('h4');
+        if (activeTasksHeading && activeTasksHeading.nextElementSibling) {
+            taskList.insertBefore(taskItem, activeTasksHeading.nextElementSibling);
+        } else {
+            taskList.appendChild(taskItem);
+        }
+
+
+        // Re-initialize feather icons for new elements
+        feather.replace();
+    }
+</script>
+<style>
+.exp-notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 5px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.exp-gain {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.exp-gain i {
+    color: #ffd700;
+}
+
+.exp-text {
+    font-weight: bold;
+    font-size: 1.2em;
+    color: #ffd700;
+}
+
+.rank-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.rank-e { background-color: #808080; color: white; }
+.rank-d { background-color: #8B4513; color: white; }
+.rank-c { background-color: #C0C0C0; color: black; }
+.rank-b { background-color: #FFD700; color: black; }
+.rank-a { background-color: #E5E4E2; color: black; }
+.rank-s { background-color: #B9F2FF; color: black; }
+.rank-s-plus { 
+    background: linear-gradient(45deg, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #4B0082, #8F00FF);
+    color: white;
+}
+
+.completed-tasks .task-item {
+    opacity: 0.7;
+}
+
+/* Rank selector styling */
+.rank-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.rank-option {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.rank-option:hover {
+    transform: scale(1.1);
+}
+
+.rank-option.selected {
+    border: 2px solid white;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.small-icon {
+    width: 14px;
+    height: 14px;
+    vertical-align: middle;
+    margin-right: 4px;
+}
+
+.task-limits-info {
+    font-size: 0.85rem;
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 8px;
+    border-radius: 4px;
+    border-left: 3px solid #ffd700;
+}
+
+/* Apply Exo font to form placeholders */
+::placeholder {
+    font-family: 'Exo', sans-serif;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Apply Exo font to all form controls */
+.form-control, 
+.form-control::placeholder,
+input, 
+select, 
+textarea {
+    font-family: 'Exo', sans-serif !important;
+}
+
+/* Error dialog styling */
+#errorModal .modal-content {
+    background: rgba(30, 30, 30, 0.95);
+    border: 1px solid rgba(138, 43, 226, 0.2);
+    color: #fff;
+}
+
+#errorModal .modal-header,
+#errorModal .modal-footer {
+    border-color: rgba(138, 43, 226, 0.1);
+}
+
+#errorModal .modal-title {
+    color: var(--purple);
+    font-family: 'Exo', sans-serif;
+}
+
+#errorModal .modal-body {
+    font-family: 'Exo', sans-serif;
+    padding: 1.5rem;
+}
+</style>
+{% endblock %}

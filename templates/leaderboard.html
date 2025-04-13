@@ -1,0 +1,494 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="leaderboard-container animate__animated animate__fadeIn glassmorphism">
+    <div class="leaderboard-header glassmorphism">
+        <h2><i data-feather="award"></i> Leaderboards</h2>
+        <div class="toggle-container">
+            <span class="toggle-label">Monthly</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="leaderboardToggle">
+                <span class="toggle-slider"></span>
+            </label>
+            <span class="toggle-label">Lifetime</span>
+        </div>
+    </div>
+
+    <div class="leaderboard-content">
+        <!-- Monthly Leaderboard -->
+        <div class="leaderboard-table glassmorphism" id="monthlyLeaderboard">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>User</th>
+                        <th>Rank</th>
+                        <th>Monthly EXP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in monthly_leaders %}
+                    {% if user.username and user.exp > 0 %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>
+                            <div class="user-info">
+                                <img src="{{ user.avatar_url }}" alt="Profile" class="leaderboard-avatar">
+                                <span>{{ user.username }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="rank-badge rank-{{ user.rank|lower|replace('+', '-plus') }}" data-rank="{{ user.rank }}">
+                                {{ user.rank }}
+                            </span>
+                        </td>
+                        <td>{{ user.exp }}</td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Lifetime Leaderboard -->
+        <div class="leaderboard-table glassmorphism hidden" id="lifetimeLeaderboard">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>User</th>
+                        <th>Level</th>
+                        <th>Lifetime EXP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in lifetime_leaders %}
+                    {% if user.username and user.lifetime_exp > 0 %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>
+                            <div class="user-info">
+                                <img src="{{ user.avatar_url }}" alt="Profile" class="leaderboard-avatar">
+                                <span>{{ user.username }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="level-badge">
+                                <span>Lv.{{ user.level }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="exp-value">
+                                <span class="exp-number">{{ user.lifetime_exp }}</span>
+                                <div class="exp-progress-bar">
+                                    <div class="exp-progress" style="width: {{ (user.lifetime_exp % 50) / 50 * 100 }}%"></div>
+                                </div>
+                                <span class="exp-label">EXP</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Wait for DOM content to be fully loaded before replacing icons
+    document.addEventListener('DOMContentLoaded', function() {
+        feather.replace();
+    });
+
+    const leaderboardToggle = document.getElementById('leaderboardToggle');
+    const monthlyLeaderboard = document.getElementById('monthlyLeaderboard');
+    const lifetimeLeaderboard = document.getElementById('lifetimeLeaderboard');
+
+    leaderboardToggle.addEventListener('change', () => {
+        if (leaderboardToggle.checked) {
+            // Show lifetime leaderboard
+            monthlyLeaderboard.classList.add('hidden');
+            lifetimeLeaderboard.classList.remove('hidden');
+        } else {
+            // Show monthly leaderboard
+            monthlyLeaderboard.classList.remove('hidden');
+            lifetimeLeaderboard.classList.add('hidden');
+        }
+    });
+</script>
+
+<style>
+    .leaderboard-container {
+        max-width: 100%;
+        margin: 20px;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        overflow-x: hidden;
+    }
+
+    .leaderboard-table {
+        width: 100%;
+        overflow-x: auto;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        padding: 15px;
+    }
+
+    .table {
+        width: 100%;
+        min-width: 600px;
+    }
+
+    .leaderboard-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+    }
+
+    .leaderboard-header h2 {
+        margin-bottom: 15px;
+    }
+
+    .toggle-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 5px;
+    }
+
+    .toggle-label {
+        color: white;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    /* Toggle Switch Styling */
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 30px;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #FFD700, #C0C0C0);
+        border-radius: 34px;
+        transition: .4s;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 22px;
+        width: 22px;
+        left: 4px;
+        bottom: 4px;
+        background-color: #ffffff;
+        border-radius: 50%;
+        transition: .4s;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    }
+
+    input:checked + .toggle-slider {
+        background: linear-gradient(135deg, #C0C0C0, #FFD700);
+    }
+
+    input:focus + .toggle-slider {
+        box-shadow: 0 0 1px #FFD700;
+    }
+
+    input:checked + .toggle-slider:before {
+        transform: translateX(30px);
+    }
+
+    .leaderboard-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        margin-right: 10px;
+        object-fit: cover;
+        background-color: #333;
+        border: 2px solid rgba(255, 215, 0, 0.3);
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+    }
+
+    .leaderboard-table {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 20px;
+        backdrop-filter: blur(5px);
+    }
+
+    .table {
+        color: white;
+        width: 100%;
+    }
+
+    .table th {
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        padding: 15px;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.9em;
+        letter-spacing: 0.5px;
+    }
+
+    .table td {
+        padding: 15px;
+        vertical-align: middle;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .table tr:hover {
+        background: rgba(255, 255, 255, 0.05);
+        transition: background 0.3s ease;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    /* Enhanced futuristic rank badges */
+    .rank-badge {
+        padding: 5px 10px;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3), 0 0 5px rgba(255, 255, 255, 0.2);
+        min-width: 50px;
+        text-align: center;
+        display: inline-block;
+        position: relative;
+        overflow: hidden;
+        
+        /* More pronounced angled corners for futuristic look */
+        clip-path: polygon(
+            8% 0,     /* top-left */
+            92% 0,    /* top-right */
+            100% 30%, /* top-right */
+            100% 70%, /* bottom-right */
+            92% 100%, /* bottom-right */
+            8% 100%,  /* bottom-left */
+            0 70%,    /* bottom-left */
+            0 30%     /* top-left */
+        );
+        
+        /* Enhanced glowing effect with stronger glow */
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.6), inset 0 0 8px rgba(255, 255, 255, 0.2);
+        letter-spacing: 1px;
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+    }
+    
+    /* Add animated border */
+    .rank-badge::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(45deg, 
+            rgba(255, 215, 0, 0.5), 
+            rgba(255, 255, 255, 0.5), 
+            rgba(255, 215, 0, 0.5)
+        );
+        background-size: 200% 200%;
+        z-index: -1;
+        animation: gradientBorder 3s ease infinite;
+        opacity: 0.5;
+    }
+    
+    /* Add a scanning line effect */
+    .rank-badge::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+            90deg, 
+            transparent, 
+            rgba(255, 255, 255, 0.2), 
+            transparent
+        );
+        animation: scanLine 2s infinite;
+        z-index: 1;
+    }
+    
+    /* Enhanced specific styles for each rank badge */
+    .rank-s-plus { 
+        background: linear-gradient(135deg, #FFD700, #FFA500);
+        color: #fff;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.7), inset 0 0 10px rgba(255, 255, 255, 0.3);
+        border: 1px solid rgba(255, 215, 0, 0.5);
+        text-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+    }
+    
+    .rank-s { 
+        background: linear-gradient(135deg, #FFA500, #FF8C00);
+        color: #fff;
+        box-shadow: 0 0 18px rgba(255, 165, 0, 0.6), inset 0 0 8px rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 165, 0, 0.4);
+        text-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+    }
+    
+    .rank-a { 
+        background: linear-gradient(135deg, #FF8C00, #FF7F50);
+        color: #fff;
+        box-shadow: 0 0 15px rgba(255, 140, 0, 0.5), inset 0 0 8px rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 140, 0, 0.4);
+        text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+    }
+    
+    .rank-b { 
+        background: linear-gradient(135deg, #FF7F50, #FF6347);
+        color: #fff;
+        box-shadow: 0 0 12px rgba(255, 127, 80, 0.5), inset 0 0 6px rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 127, 80, 0.4);
+    }
+    
+    .rank-c { 
+        background: linear-gradient(135deg, #FF6347, #DC143C);
+        color: #fff;
+        box-shadow: 0 0 12px rgba(255, 99, 71, 0.4), inset 0 0 6px rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 99, 71, 0.3);
+    }
+    
+    .rank-d { 
+        background: linear-gradient(135deg, #DC143C, #8B0000);
+        color: #fff;
+        box-shadow: 0 0 10px rgba(220, 20, 60, 0.4), inset 0 0 5px rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(220, 20, 60, 0.3);
+    }
+    
+    .rank-e { 
+        background: linear-gradient(135deg, #8B0000, #4B0082);
+        color: #fff;
+        box-shadow: 0 0 10px rgba(139, 0, 0, 0.4), inset 0 0 5px rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(139, 0, 0, 0.3);
+    }
+    
+    /* Enhanced Level Badge Styling */
+    .level-badge {
+        display: inline-block;
+        padding: 5px 12px;
+        background: linear-gradient(135deg, #4e54c8, #8f94fb);
+        border-radius: 15px;
+        color: white;
+        font-weight: bold;
+        box-shadow: 0 0 15px rgba(78, 84, 200, 0.4);
+        text-align: center;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    /* Add scanning line effect */
+    .level-badge::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 80%;
+        height: 100%;
+        background: linear-gradient(
+            90deg, 
+            transparent, 
+            rgba(255, 255, 255, 0.3), 
+            transparent
+        );
+        animation: scanLine 2s infinite;
+        z-index: 1;
+    }
+    
+    /* EXP Value Styling */
+    .exp-value {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .exp-number {
+        font-weight: bold;
+        color: #FFD700;
+        text-shadow: 0 0 8px rgba(255, 215, 0, 0.8), 0 0 15px rgba(255, 215, 0, 0.4);
+        letter-spacing: 1px;
+        position: relative;
+    }
+    
+    .exp-label {
+        font-size: 0.8em;
+        opacity: 0.7;
+    }
+    
+    .exp-progress-bar {
+        width: 60px;
+        height: 8px;
+        background-color: rgba(5, 10, 25, 0.3);
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2),
+                    0 0 5px rgba(255, 215, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .exp-progress {
+        height: 100%;
+        background: linear-gradient(to right, #FFD700, #FFA500);
+        border-radius: 4px;
+        transition: width 0.5s ease-in-out;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    /* Add shimmer effect to progress bar */
+    .exp-progress::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 80%;
+        height: 100%;
+        background: linear-gradient(
+            90deg, 
+            transparent, 
+            rgba(255, 255, 255, 0.3), 
+            transparent
+        );
+        animation: shimmer 2s infinite;
+    }
+    
+    @keyframes shimmer {
+        0% { transform: translateX(0%); }
+        100% { transform: translateX(200%); }
+    }
+</style>
+{% endblock %}

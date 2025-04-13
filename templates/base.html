@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskSpree</title>
+    <link href="https://fonts.googleapis.com/css2?family=Exo:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/micro-interactions.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    {% block head %}{% endblock %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/store.css') }}">{# Added for store and inventory pages #}
+    <!-- Preload critical resources for faster loading -->
+    <link rel="preload" href="{{ url_for('static', filename='sounds/bgm.mp3') }}" as="audio" type="audio/mp3" fetchpriority="high">
+    <link rel="preload" href="{{ url_for('static', filename='sounds/hover.mp3') }}" as="audio" type="audio/mp3">
+    <link rel="preload" href="{{ url_for('static', filename='sounds/complete.mp3') }}" as="audio" type="audio/mp3">
+    <link rel="preload" href="{{ url_for('static', filename='bg.png') }}" as="image">
+    <link rel="preload" href="{{ url_for('static', filename='images/taskspree-logo.png') }}" as="image" fetchpriority="high">
+    
+    <!-- Audio element with improved loading attributes -->
+    <audio id="bgMusic" loop preload="auto" style="display:none">
+        <source src="{{ url_for('static', filename='sounds/bgm.mp3') }}" type="audio/mp3">
+        Your browser does not support the audio element.
+    </audio>
+    
+    </head>
+<body class="dark-theme" id="app-body">
+    <!-- Particles Background -->
+    <div class="particles" id="particles"></div>
+    
+    <!-- Loading Overlay -->
+    <div class="loading-overlay">
+        <div class="loading-logo-container">
+            <div class="loading-spinner"></div>
+            <img src="{{ url_for('static', filename='images/taskspree-logo.png') }}" alt="Loading..." class="loading-logo">
+            <div class="loading-text">Initializing</div>
+            <div class="loading-progress">
+                <div class="loading-progress-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container-fluid">
+                <a class="navbar-brand hover-sound" href="{{ url_for('home') }}">
+                    <img src="{{ url_for('static', filename='images/taskspree-logo.png') }}" alt="TaskSpree" class="nav-logo">
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link hover-sound" href="{{ url_for('home') }}">
+                                <i data-feather="home"></i> Home
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link hover-sound" href="{{ url_for('tasks') }}">
+                                <i data-feather="check-square"></i> Tasks
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link hover-sound" href="{{ url_for('leaderboard') }}">
+                                <i data-feather="award"></i> Leaderboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link hover-sound" href="{{ url_for('lucky_wheel') }}">
+                                <i data-feather="gift"></i> Lucky Wheel
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link hover-sound" href="{{ url_for('store') }}">
+                                <i data-feather="shopping-bag"></i> Store
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link hover-sound" href="{{ url_for('inventory') }}">
+                                <i data-feather="package"></i> Inventory
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link hover-sound" href="{{ url_for('profile') }}">
+                                <i data-feather="user"></i> Profile
+                            </a>
+                        </li>
+                    </ul>
+                    {% if current_user.is_authenticated %}
+                    <div class="user-info d-flex align-items-center me-4">
+                        <div class="user-stats d-flex align-items-center">
+                            <div class="hp-info">
+                                <i data-feather="heart" class="text-danger me-1"></i>
+                                <span class="current-hp">{{ current_user.hp }}</span>/<span class="max-hp">{{ current_user.max_hp }}</span>
+                                <span class="buff-effect"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="nav-item d-flex align-items-center">
+                        <a href="{{ url_for('logout') }}" class="btn btn-outline-light hover-sound">
+                            <i data-feather="log-out"></i> Logout
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+
+        <div class="container mt-4">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-info">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Enhanced Loading and BGM control with persistent audio
+        document.addEventListener('DOMContentLoaded', function() {
+            // Don't directly play the audio here, let main.js handle it
+            const bgMusic = document.getElementById('bgMusic');
+            const loadingOverlay = document.querySelector('.loading-overlay');
+            const mainContent = document.querySelector('.main-content');
+            const loadingText = document.querySelector('.loading-text');
+            const loadingProgressBar = document.querySelector('.loading-progress-bar');
+            
+            // Track page transitions for audio persistence
+            if (window.performance && window.performance.navigation.type === window.performance.navigation.TYPE_NAVIGATE) {
+                // This is a fresh page load (not a reload or back/forward navigation)
+                sessionStorage.setItem('pageTransition', 'true');
+            }
+            
+            // Simplified loading animation for better performance
+            // Check for return visits to speed up loading
+            const isReturningVisitor = sessionStorage.getItem('returningVisitor') === 'true';
+            const isTransitioning = localStorage.getItem('bgMusicTransitioning') === 'true' || 
+                                    sessionStorage.getItem('pageTransition') === 'true';
+            
+            // Use fewer loading messages for better performance
+            const loadingTexts = isTransitioning || isReturningVisitor ? 
+                ['Loading', 'Ready'] : 
+                ['Initializing', 'Loading', 'Ready'];
+            
+            let currentTextIndex = 0;
+            let loadingProgress = 0;
+            
+            // Faster, simpler loading text update
+            function updateLoadingText() {
+                if (currentTextIndex >= loadingTexts.length) return;
+                
+                // Simply set the text without typewriter effect for better performance
+                loadingText.textContent = loadingTexts[currentTextIndex];
+                
+                // Progress to next text after a brief delay - faster for transitions
+                const textDelay = isTransitioning ? 300 : (isReturningVisitor ? 500 : 800);
+                setTimeout(() => {
+                    currentTextIndex++;
+                    if (currentTextIndex < loadingTexts.length) {
+                        updateLoadingText();
+                    }
+                }, textDelay);
+            }
+            
+            // Simplified loading progress with fewer calculations
+            function simulateLoading() {
+                // Use fixed increments for better performance
+                const increment = isTransitioning ? 15 : (isReturningVisitor ? 10 : 5);
+                
+                loadingProgress += increment;
+                if (loadingProgress > 100) loadingProgress = 100;
+                
+                // Update progress bar width
+                loadingProgressBar.style.width = `${loadingProgress}%`;
+                
+                // Continue until 100% with minimal calculations
+                if (loadingProgress < 100) {
+                    // Faster for returning visitors
+                    const progressDelay = isTransitioning ? 50 : (isReturningVisitor ? 75 : 100); 
+                    setTimeout(simulateLoading, progressDelay);
+                }
+            }
+            
+            // Mark as returning visitor for future visits
+            sessionStorage.setItem('returningVisitor', 'true');
+            
+            // Start loading animations - simplified
+            updateLoadingText();
+            simulateLoading();
+
+            // Optimized audio preload for faster startup
+            function preloadAudio() {
+                // Skip preloading if music is disabled or transitioning between pages
+                // (for transitions, the audio is already loaded)
+                if (localStorage.getItem('bgMusicMuted') === 'true' || 
+                    localStorage.getItem('bgMusicTransitioning') === 'true') {
+                    return;
+                }
+                
+                // Set position directly - much faster than using a separate Audio object
+                const savedPosition = localStorage.getItem('bgMusicPosition');
+                if (savedPosition && !isNaN(parseFloat(savedPosition))) {
+                    bgMusic.currentTime = parseFloat(savedPosition);
+                }
+                
+                // Preload the audio element directly
+                bgMusic.load();
+                
+                // Highest priority hint to browser
+                bgMusic.preload = 'auto';
+            }
+            
+            // Start audio preload immediately
+            preloadAudio();
+
+            // Optimized resource loading check - much faster performance
+            function checkResourcesLoaded() {
+                return new Promise((resolve) => {
+                    // Only check critical images (header logo, buttons)
+                    // This is much faster than checking all images
+                    const criticalImages = document.querySelectorAll('.nav-logo, .loading-logo');
+                    
+                    // Use a faster image loading approach
+                    let imagesLoaded = 0;
+                    const totalImages = criticalImages.length;
+                    
+                    function checkAllImagesLoaded() {
+                        if (imagesLoaded === totalImages) {
+                            continueLoading();
+                        }
+                    }
+                    
+                    // Setup faster image load tracking
+                    criticalImages.forEach(img => {
+                        if (img.complete) {
+                            imagesLoaded++;
+                        } else {
+                            img.onload = img.onerror = function() {
+                                imagesLoaded++;
+                                checkAllImagesLoaded();
+                            };
+                        }
+                    });
+                    
+                    // Continue if all images are already loaded
+                    checkAllImagesLoaded();
+                    
+                    // MUCH faster loading times based on context
+                    function continueLoading() {
+                        // Super optimized loading time detection
+                        const isTransition = localStorage.getItem('bgMusicTransitioning') === 'true' || 
+                                           sessionStorage.getItem('pageTransition') === 'true';
+                        const isReturning = sessionStorage.getItem('returningVisitor') === 'true';
+                        
+                        // Minimal delays - much faster
+                        const loadingDelay = isTransition ? 200 : 
+                                           (isReturning ? 400 : 600);
+                        
+                        // Record for future visits
+                        sessionStorage.setItem('returningVisitor', 'true');
+                        
+                        // Finish loading immediately for transitions
+                        if (isTransition) {
+                            finishLoading();
+                        } else {
+                            // Short delay for visual effect
+                            setTimeout(finishLoading, loadingDelay);
+                        }
+                        
+                        function finishLoading() {
+                            // Ensure progress bar completes
+                            loadingProgress = 100;
+                            loadingProgressBar.style.width = '100%';
+                            
+                            // Set appropriate final text
+                            loadingText.textContent = isTransition ? 'Loaded' : 'Ready';
+                            
+                            // Resolve immediately for transitions
+                            if (isTransition) {
+                                resolve();
+                            } else {
+                                // Short final delay
+                                setTimeout(resolve, 150);
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Handle page load completion
+            checkResourcesLoaded().then(() => {
+                // Fade out loading overlay
+                loadingOverlay.classList.add('fade-out');
+
+                // Determine transition state for content fade-in speed
+                const isTransition = localStorage.getItem('bgMusicTransitioning') === 'true' || 
+                                   sessionStorage.getItem('pageTransition') === 'true';
+                
+                // Use faster transition timing for returning visitors and transitions
+                const transitionDelay = isTransition ? 150 : 300;
+                
+                // Show main content with minimal delay during transitions
+                setTimeout(() => {
+                    mainContent.classList.add('loaded');
+                    
+                    // Add page entrance animation - faster for transitions
+                    document.querySelectorAll('.container, .card, .task-item').forEach((el, index) => {
+                        el.style.opacity = '0';
+                        el.style.transform = 'translateY(20px)';
+                        // Faster transitions for returning users
+                        const transitionDuration = isTransition ? '0.3s' : '0.5s';
+                        el.style.transition = `opacity ${transitionDuration} ease, transform ${transitionDuration} ease`;
+                        
+                        // Stagger the animations - much shorter delays for transitions
+                        const staggerDelay = isTransition ? 30 : 50;
+                        const baseDelay = isTransition ? 50 : 100;
+                        
+                        setTimeout(() => {
+                            el.style.opacity = '1';
+                            el.style.transform = 'translateY(0)';
+                        }, baseDelay + (index * staggerDelay));
+                    });
+                    
+                    // Initialize Feather icons after content is visible
+                    feather.replace();
+                    
+                    // Apply glassmorphism to dropdown menus
+                    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                        menu.classList.add('glassmorphism');
+                    });
+                }, transitionDelay);
+            });
+            
+            // Create particles for background - optimized for performance
+            function createParticles() {
+                const particlesContainer = document.getElementById('particles');
+                if (!particlesContainer) return;
+                
+                // Check if on a mobile device or has reduced performance setting
+                const isReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                
+                // Reduce particle count for better performance
+                const particleCount = isReducedMotion || isMobile ? 8 : 12; // Fewer particles
+                
+                // Clear any existing particles
+                particlesContainer.innerHTML = '';
+                
+                // Create document fragment for efficient DOM operations
+                const fragment = document.createDocumentFragment();
+                
+                for (let i = 0; i < particleCount; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    
+                    // Random size - fewer variations for performance
+                    const size = Math.floor(Math.random() * 3) + 2;
+                    
+                    // Random position with integer values
+                    const posX = Math.floor(Math.random() * 100);
+                    const posY = Math.floor(Math.random() * 100);
+                    
+                    // Fixed opacity - avoid randomization
+                    const opacity = 0.3;
+                    
+                    // Fewer animation variations for better performance
+                    const delay = Math.floor(Math.random() * 10) * 2; // Fewer options, integer values
+                    const duration = Math.floor(Math.random() * 3) * 10 + 20; // Only 3 duration options
+                    
+                    // Apply styles efficiently (single batch)
+                    Object.assign(particle.style, {
+                        width: `${size}px`,
+                        height: `${size}px`,
+                        left: `${posX}%`,
+                        bottom: `${posY}%`,
+                        opacity: opacity,
+                        animationDelay: `${delay}s`,
+                        animationDuration: `${duration}s`,
+                    });
+                    
+                    // Add to fragment instead of directly to DOM
+                    fragment.appendChild(particle);
+                }
+                
+                // Add all particles at once for better performance
+                particlesContainer.appendChild(fragment);
+            }
+            
+            // Initialize particles
+            // Add a slight delay to prioritize core content loading
+            setTimeout(createParticles, 100);
+            
+            // Setup page transition hooks for smooth music continuation
+            // This will save audio state right before navigation
+            document.addEventListener('click', function(e) {
+                // Check if this is a link click that will navigate to a new page
+                const link = e.target.closest('a');
+                if (link && link.href && link.href.startsWith(window.location.origin)) {
+                    // Internal link clicked - save audio state
+                    if (bgMusic && !bgMusic.paused) {
+                        localStorage.setItem('bgMusicPosition', bgMusic.currentTime.toString());
+                        localStorage.setItem('bgMusicLastPlay', Date.now().toString());
+                        localStorage.setItem('bgMusicTransitioning', 'true');
+                    }
+                }
+            });
+            
+            // Clear transition flag when page is fully loaded
+            window.addEventListener('load', function() {
+                localStorage.removeItem('bgMusicTransitioning');
+            });
+        });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/micro-interactions.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

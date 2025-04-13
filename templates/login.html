@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="login-container animate__animated animate__fadeIn">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card login-card glassmorphism">
+                <div class="card-body">
+                    <h2 class="text-center mb-4">TASKSPREE</h2>
+
+                    <ul class="nav nav-tabs mb-3" id="authTabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="login-tab" data-bs-toggle="tab" href="#login" role="tab">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="register-tab" data-bs-toggle="tab" href="#register" role="tab">Register</a>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="login" role="tabpanel">
+                            <form action="{{ url_for('login') }}" method="POST">
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="username" name="username" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="password" name="password" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">Login</button>
+                            </form>
+                        </div>
+
+                        <div class="tab-pane fade" id="register" role="tabpanel">
+                            <form action="{{ url_for('register') }}" method="POST">
+                                <div class="mb-3">
+                                    <label for="reg-username" class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="reg-username" name="username" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="reg-email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="reg-email" name="email" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="reg-password" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="reg-password" name="password" required minlength="6">
+                                    <div class="form-text">Password must be at least 6 characters long</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="reg-code" class="form-label">Registration Code</label>
+                                    <input type="text" class="form-control" id="reg-code" name="registration_code" required>
+                                    <div class="form-text">Enter your registration code to create an account</div>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">Register</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Disable any automatic loading handlers from base.html first by overriding
+window.finishLoading = null;
+window.checkResourcesLoaded = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Login page: Custom loading animation sequence initialized');
+    
+    // 1. First, prevent the default loading animation from completing
+    const mainContent = document.querySelector('.main-content');
+    const loadingOverlay = document.querySelector('.loading-overlay');
+    
+    // Make sure these elements exist before proceeding
+    if (!loadingOverlay) {
+        console.error('Loading overlay not found!');
+        return;
+    }
+    
+    // Make sure main content stays hidden until we're ready
+    if (mainContent) {
+        mainContent.style.opacity = '0';
+        mainContent.classList.remove('loaded');
+    }
+    
+    // Prevent any existing loading overlay from being hidden
+    if (loadingOverlay.classList.contains('fade-out')) {
+        loadingOverlay.classList.remove('fade-out');
+    }
+    
+    // Get loading container and progress bar
+    const loadingContainer = document.querySelector('.loading-logo-container');
+    const loadingProgressBar = document.querySelector('.loading-progress-bar');
+    
+    if (!loadingContainer || !loadingProgressBar) {
+        console.error('Loading container or progress bar not found!');
+        return;
+    }
+    
+    // 2. Control loading progress precisely - EXACTLY 2 seconds
+    console.log('Starting fixed-duration loading simulation (2s)');
+    let progress = 0;
+    const loadingDuration = 2000; // 2 seconds
+    const interval = 20; // Update every 20ms
+    const steps = loadingDuration / interval;
+    const increment = 100 / steps;
+    
+    const progressInterval = setInterval(() => {
+        progress += increment;
+        loadingProgressBar.style.width = Math.min(progress, 100) + '%';
+        
+        if (progress >= 100) {
+            clearInterval(progressInterval);
+            console.log('Loading simulation complete, showing ARISE animation');
+            showAriseAnimation();
+        }
+    }, interval);
+    
+    // 3. Show the ARISE animation after loading completes
+    function showAriseAnimation() {
+        console.log('Preparing ARISE animation');
+        
+        // First hide the loading content
+        loadingContainer.style.transition = 'opacity 0.5s ease';
+        loadingContainer.style.opacity = '0';
+        
+        // Wait for the fade out
+        setTimeout(() => {
+            console.log('Showing ARISE text');
+            // Remove the container
+            loadingContainer.style.display = 'none';
+            
+            // Create and show the ARISE text
+            const ariseText = document.createElement('div');
+            ariseText.className = 'arise-text';
+            ariseText.textContent = 'ARISE';
+            
+            // Add to overlay
+            loadingOverlay.appendChild(ariseText);
+            
+            // Keep the ARISE text visible for EXACTLY 2 seconds
+            console.log('ARISE animation started, will show for 2s');
+            setTimeout(() => {
+                console.log('ARISE animation complete, fading out');
+                // Fade out the loading overlay
+                loadingOverlay.classList.add('fade-out');
+                
+                // Show main content after overlay fades
+                setTimeout(() => {
+                    console.log('Showing main content');
+                    if (mainContent) {
+                        mainContent.style.opacity = '1';
+                        mainContent.classList.add('loaded');
+                    }
+                }, 1000);
+            }, 2000); // Fixed exactly 2 seconds
+        }, 600);
+    }
+
+    // Handle tab switching
+    const authTabs = document.getElementById('authTabs');
+    const loginTab = document.getElementById('login-tab');
+    const registerTab = document.getElementById('register-tab');
+
+    if (authTabs) {
+        // Show appropriate tab based on URL hash
+        if (window.location.hash === '#register') {
+            const registerTabInstance = new bootstrap.Tab(registerTab);
+            registerTabInstance.show();
+        }
+
+        // Add login form validation
+        const loginForm = document.querySelector('#login form');
+        loginForm.addEventListener('submit', function(e) {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                e.preventDefault();
+                alert('Username and password are required');
+            }
+        });
+
+        // Add registration form validation
+        const registerForm = document.querySelector('#register form');
+        registerForm.addEventListener('submit', function(e) {
+            const password = document.getElementById('reg-password').value;
+            if (password.length < 6) {
+                e.preventDefault();
+                alert('Password must be at least 6 characters long');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

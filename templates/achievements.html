@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="achievements-container animate__animated animate__fadeIn">
+    <div class="achievement-header">
+        <h2><i data-feather="award"></i> Achievements</h2>
+        <div class="achievement-summary">
+            <span class="total-achievements">
+                {{ user_achievements|length }}/{{ total_achievements }} Unlocked
+            </span>
+        </div>
+    </div>
+
+    <div class="achievement-categories">
+        <div class="row">
+            <!-- Task Master Category -->
+            <div class="col-md-4">
+                <div class="achievement-category-card">
+                    <h3><i data-feather="check-circle"></i> Task Master</h3>
+                    <div class="achievement-grid">
+                        {% for achievement in achievements if achievement.category == 'task' %}
+                        <div class="achievement-item {% if achievement.id in earned_achievements %}earned{% endif %}"
+                             data-bs-toggle="tooltip" 
+                             data-bs-placement="top"
+                             title="{{ achievement.description }}">
+                            <div class="achievement-icon">
+                                <img src="{{ achievement.image_url }}" alt="{{ achievement.name }}">
+                            </div>
+                            <div class="achievement-details">
+                                <h5>{{ achievement.name }}</h5>
+                                <span class="exp-reward">+{{ achievement.exp_reward }} EXP</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Social Star Category -->
+            <div class="col-md-4">
+                <div class="achievement-category-card">
+                    <h3><i data-feather="users"></i> Social Star</h3>
+                    <div class="achievement-grid">
+                        {% for achievement in achievements if achievement.category == 'social' %}
+                        <div class="achievement-item {% if achievement.id in earned_achievements %}earned{% endif %}"
+                             data-bs-toggle="tooltip" 
+                             data-bs-placement="top"
+                             title="{{ achievement.description }}">
+                            <div class="achievement-icon">
+                                <img src="{{ achievement.image_url }}" alt="{{ achievement.name }}">
+                            </div>
+                            <div class="achievement-details">
+                                <h5>{{ achievement.name }}</h5>
+                                <span class="exp-reward">+{{ achievement.exp_reward }} EXP</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Champion Category -->
+            <div class="col-md-4">
+                <div class="achievement-category-card">
+                    <h3><i data-feather="target"></i> Game Champion</h3>
+                    <div class="achievement-grid">
+                        {% for achievement in achievements if achievement.category == 'game' %}
+                        <div class="achievement-item {% if achievement.id in earned_achievements %}earned{% endif %}"
+                             data-bs-toggle="tooltip" 
+                             data-bs-placement="top"
+                             title="{{ achievement.description }}">
+                            <div class="achievement-icon">
+                                <img src="{{ achievement.image_url }}" alt="{{ achievement.name }}">
+                            </div>
+                            <div class="achievement-details">
+                                <h5>{{ achievement.name }}</h5>
+                                <span class="exp-reward">+{{ achievement.exp_reward }} EXP</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Achievements -->
+    <div class="recent-achievements mt-4">
+        <h3><i data-feather="clock"></i> Recent Unlocks</h3>
+        <div class="achievement-timeline">
+            {% for achievement in recent_achievements %}
+            <div class="timeline-item animate__animated animate__fadeInLeft">
+                <div class="timeline-icon">
+                    <img src="{{ achievement.image_url }}" alt="{{ achievement.name }}">
+                </div>
+                <div class="timeline-content">
+                    <h5>{{ achievement.name }}</h5>
+                    <p>{{ achievement.description }}</p>
+                    <span class="timestamp">Unlocked {{ achievement.earned_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    feather.replace();
+    
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+
+    // Achievement unlock animation
+    document.querySelectorAll('.achievement-item.earned').forEach(item => {
+        item.addEventListener('mouseenter', () => {
+            item.classList.add('animate__animated', 'animate__pulse');
+        });
+        
+        item.addEventListener('animationend', () => {
+            item.classList.remove('animate__animated', 'animate__pulse');
+        });
+    });
+</script>
+{% endblock %}

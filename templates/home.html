@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="home-container">
+    <div class="profile-summary animate__animated animate__fadeIn">
+        <div class="level-display">
+            <h2>Level <span id="userLevel">{{ current_user.level }}</span></h2>
+            <div class="exp-info mb-2">
+                <span class="me-3">Monthly EXP: <span id="monthlyExp">0</span></span>
+                <span>Lifetime EXP: <span id="lifetimeExp">0</span></span>
+            </div>
+        </div>
+
+        <div class="rank-display">
+            <h3>Rank: <span id="userRank">{{ current_user.rank }}</span></h3>
+            <div class="profile-pic-container">
+                <img src="{{ current_user.avatar_url }}" alt="Profile Picture" class="profile-pic">
+            </div>
+        </div>
+    </div>
+
+    <div class="daily-quote">
+        <blockquote class="quote-text">
+            <span id="dailyQuote" class="anime-quote"></span>
+            <small id="quoteAuthor" class="quote-author"></small>
+        </blockquote>
+    </div>
+
+    <div class="quick-stats">
+        <div class="stat-card">
+            <i data-feather="check-circle"></i>
+            <span>Tasks Completed</span>
+            <h4 id="completedTasks">0</h4>
+        </div>
+        <div class="stat-card">
+            <i data-feather="calendar"></i>
+            <span>Streak</span>
+            <h4 id="loginStreak">0</h4>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    feather.replace();
+
+    // Anime quotes collection
+    const animeQuotes = [
+        { quote: "**It's not a question of can or can't. There are some things in life you just do.**", author: "— Lightning (Final Fantasy XIII)" },
+        { quote: "**If you don't take risks, you can't create a future!**", author: "— Monkey D. Luffy (One Piece)" },
+        { quote: "**If you don't like your destiny, don't accept it. Instead, have the courage to *change* it the way you want it to be.**", author: "— Naruto Uzumaki (Naruto)" },
+        { quote: "**Whatever you lose, you'll find it again. But what you throw away you'll never get back.**", author: "— Kenshin Himura (Rurouni Kenshin)" },
+        { quote: "**Fear is not evil. It tells you what your weakness is. And once you know your weakness, you can become stronger as well as kinder.**", author: "— Gildarts Clive (Fairy Tail)" },
+        { quote: "**It's painful when you get to know people, so I don't. *Talking to people just leads to painful things*.**", author: "— Oreki Houtarou (Hyouka)" },
+        { quote: "**People's lives don't end when they die. It ends when they lose faith.**", author: "— Itachi Uchiha (Naruto)" },
+        { quote: "**I don't want to conquer anything. I just think the guy with the most freedom in this whole ocean... that's the Pirate King!**", author: "— Monkey D. Luffy (One Piece)" },
+        { quote: "**I'll leave tomorrow's problems to tomorrow's me.**", author: "— Saitama (One Punch Man)" },
+        { quote: "**If you wanna make people dream, you've gotta start by believing in that dream yourself!**", author: "— Seiya Kanie (Amagi Brilliant Park)" },
+        { quote: "**A person grows up when he's able to overcome hardships. *Protection is important, but there are some things that a person must learn on his own*.**", author: "— Jiraiya (Naruto)" },
+        { quote: "**Giving up kills people. When people reject giving up... they finally win the right to transcend humanity.**", author: "— Alucard (Hellsing)" },
+        { quote: "**Hard work betrays none, but dreams betray many.**", author: "— Hachiman Hikigaya (My Teen Romantic Comedy SNAFU)" },
+        { quote: "**You can die anytime, but living takes true courage.**", author: "— Kenshin Himura (Rurouni Kenshin)" },
+        { quote: "***People become stronger because they have memories they cannot forget*.**", author: "— Tsunade (Naruto)" }
+    ];
+
+    // Display a daily quote based on the date
+    function displayDailyQuote() {
+        // Use the day of the year to select a quote (so it changes each day)
+        const today = new Date();
+        const start = new Date(today.getFullYear(), 0, 0);
+        const diff = today - start;
+        const oneDay = 1000 * 60 * 60 * 24;
+        const dayOfYear = Math.floor(diff / oneDay);
+        
+        // Select quote based on the day of year
+        const quoteIndex = dayOfYear % animeQuotes.length;
+        const quote = animeQuotes[quoteIndex];
+        
+        // Display quote with markdown-style formatting converted to HTML
+        const formattedQuote = quote.quote
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>');
+        
+        document.getElementById('dailyQuote').innerHTML = formattedQuote;
+        document.getElementById('quoteAuthor').textContent = quote.author;
+    }
+
+    // Call the function when page loads
+    displayDailyQuote();
+
+    // Update stats
+    async function updateStats() {
+        try {
+            const [taskResponse, userResponse] = await Promise.all([
+                fetch('/api/tasks/stats'),
+                fetch('/api/user/stats')
+            ]);
+
+            if (!taskResponse.ok || !userResponse.ok) {
+                throw new Error('Failed to fetch stats');
+            }
+
+            const [taskStats, userStats] = await Promise.all([
+                taskResponse.json(),
+                userResponse.json()
+            ]);
+
+            // Update experience displays
+            const elements = {
+                monthlyExp: document.getElementById('monthlyExp'),
+                lifetimeExp: document.getElementById('lifetimeExp'),
+                userRank: document.getElementById('userRank'),
+                userLevel: document.getElementById('userLevel'),
+                monthlyExpProgress: document.getElementById('monthlyExpProgress'),
+                completedTasks: document.getElementById('completedTasks')
+            };
+
+            // Update text displays
+            if (elements.monthlyExp) elements.monthlyExp.textContent = userStats.monthly_exp;
+            if (elements.lifetimeExp) elements.lifetimeExp.textContent = userStats.lifetime_exp;
+            if (elements.userRank) elements.userRank.textContent = userStats.rank;
+            if (elements.userLevel) elements.userLevel.textContent = userStats.level;
+            if (elements.completedTasks) elements.completedTasks.textContent = taskStats.completed;
+            const loginStreakElement = document.getElementById('loginStreak');
+            if (loginStreakElement) loginStreakElement.textContent = userStats.login_streak || 0;
+
+            // Update monthly progress bar with smooth animation
+            if (elements.monthlyExpProgress) {
+                const monthlyProgress = userStats.monthly_exp / (userStats.monthly_exp + userStats.next_rank_exp) * 100;
+                requestAnimationFrame(() => {
+                    elements.monthlyExpProgress.style.width = `${monthlyProgress}%`;
+                });
+            }
+        } catch (error) {
+            console.error('Error updating stats:', error);
+        }
+    }
+
+    // Listen for stats updates from other pages
+    window.addEventListener('statsUpdated', (event) => {
+        const { userStats, taskStats } = event.detail;
+        updateStats();
+    });
+
+    // Initial stats update
+    updateStats();
+
+    // Update stats periodically
+    setInterval(updateStats, 30000); // Update every 30 seconds
+</script>
+{% endblock %}

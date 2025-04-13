@@ -1,0 +1,378 @@
+{% extends "base.html" %}
+
+{% block title %}Store{% endblock %}
+
+{% block additional_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/store.css') }}">
+<style>
+    /* Fix any scrolling issues */
+    .modal-dialog {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10000;
+        width: 90%;
+        max-width: 500px;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(5px);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    /* Ensure domain expansion effects are visible */
+    .domain-effect {
+        background: linear-gradient(135deg, rgba(128, 0, 128, 0.3), rgba(153, 51, 255, 0.5));
+        border: 1px solid rgba(153, 51, 255, 0.8);
+        box-shadow: 0 0 15px rgba(153, 51, 255, 0.6);
+        color: white;
+        text-shadow: 0 0 5px rgba(153, 51, 255, 0.8);
+        animation: domainPulse 2s infinite alternate;
+    }
+    
+    @keyframes domainPulse {
+        0% { box-shadow: 0 0 10px rgba(153, 51, 255, 0.4); }
+        100% { box-shadow: 0 0 20px rgba(153, 51, 255, 0.8); }
+    }
+    
+    /* Shield effects */
+    .shield-effect {
+        background: linear-gradient(135deg, rgba(0, 100, 255, 0.3), rgba(0, 150, 255, 0.5));
+        border: 1px solid rgba(0, 150, 255, 0.8);
+        box-shadow: 0 0 15px rgba(0, 150, 255, 0.6);
+        color: white;
+        text-shadow: 0 0 5px rgba(0, 150, 255, 0.8);
+        animation: shieldPulse 2s infinite alternate;
+    }
+    
+    @keyframes shieldPulse {
+        0% { box-shadow: 0 0 10px rgba(0, 150, 255, 0.4); }
+        100% { box-shadow: 0 0 20px rgba(0, 150, 255, 0.8); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <h1 class="card-title mb-0">
+                        <i data-feather="shopping-bag" class="me-2"></i>Store
+                    </h1>
+                    <div class="player-coins">
+                        <span class="badge bg-warning text-dark p-2">
+                            <i data-feather="dollar-sign" class="me-1"></i>
+                            <span id="user-coins">{{ current_user.coins }}</span> coins
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Store categories -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <ul class="nav nav-pills nav-fill" id="store-tabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="healing-tab" data-bs-toggle="tab" data-bs-target="#healing" type="button" role="tab" aria-controls="healing" aria-selected="true">
+                        <i data-feather="heart" class="me-2"></i>Healing
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="buff-tab" data-bs-toggle="tab" data-bs-target="#buff" type="button" role="tab" aria-controls="buff" aria-selected="false">
+                        <i data-feather="trending-up" class="me-2"></i>Buffs
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="debuff-tab" data-bs-toggle="tab" data-bs-target="#debuff" type="button" role="tab" aria-controls="debuff" aria-selected="false">
+                        <i data-feather="trending-down" class="me-2"></i>Debuffs
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="recovery-tab" data-bs-toggle="tab" data-bs-target="#recovery" type="button" role="tab" aria-controls="recovery" aria-selected="false">
+                        <i data-feather="shield" class="me-2"></i>Recovery
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Store items -->
+    <div class="tab-content" id="storeTabContent">
+        <!-- Healing Items -->
+        <div class="tab-pane fade show active" id="healing" role="tabpanel" aria-labelledby="healing-tab">
+            <div class="row">
+                {% for item in healing_items %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card item-card shadow-sm {{ item.item_tier }}">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">{{ item.name }}</h5>
+                            <div class="item-tier">
+                                <span class="badge bg-tier-{{ item.item_tier }}">{{ item.item_tier|title }}</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="item-icon mb-2">
+                                <i data-feather="{{ item.icon }}"></i>
+                            </div>
+                            <p class="card-text">{{ item.description }}</p>
+                        </div>
+                        <div class="card-footer d-flex justify-content-between align-items-center">
+                            <div class="item-price">
+                                <i data-feather="dollar-sign" class="me-1"></i> {{ item.price }} coins
+                            </div>
+                            <button class="btn btn-primary btn-buy-item" data-item-id="{{ item.id }}">
+                                <i data-feather="shopping-cart" class="me-1"></i> Buy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Buff Items -->
+        <div class="tab-pane fade" id="buff" role="tabpanel" aria-labelledby="buff-tab">
+            <div class="row">
+                {% for item in buff_items %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card item-card shadow-sm {{ item.item_tier }}">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">{{ item.name }}</h5>
+                            <div class="item-tier">
+                                <span class="badge bg-tier-{{ item.item_tier }}">{{ item.item_tier|title }}</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="item-icon mb-2">
+                                <i data-feather="{{ item.icon }}"></i>
+                            </div>
+                            <p class="card-text">{{ item.description }}</p>
+                        </div>
+                        <div class="card-footer d-flex justify-content-between align-items-center">
+                            <div class="item-price">
+                                <i data-feather="dollar-sign" class="me-1"></i> {{ item.price }} coins
+                            </div>
+                            <button class="btn btn-primary btn-buy-item" data-item-id="{{ item.id }}">
+                                <i data-feather="shopping-cart" class="me-1"></i> Buy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Debuff Items -->
+        <div class="tab-pane fade" id="debuff" role="tabpanel" aria-labelledby="debuff-tab">
+            <div class="row">
+                {% for item in debuff_items %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card item-card shadow-sm {{ item.item_tier }}">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">{{ item.name }}</h5>
+                            <div class="item-tier">
+                                <span class="badge bg-tier-{{ item.item_tier }}">{{ item.item_tier|title }}</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="item-icon mb-2">
+                                <i data-feather="{{ item.icon }}"></i>
+                            </div>
+                            <p class="card-text">{{ item.description }}</p>
+                        </div>
+                        <div class="card-footer d-flex justify-content-between align-items-center">
+                            <div class="item-price">
+                                <i data-feather="dollar-sign" class="me-1"></i> {{ item.price }} coins
+                            </div>
+                            <button class="btn btn-primary btn-buy-item" data-item-id="{{ item.id }}">
+                                <i data-feather="shopping-cart" class="me-1"></i> Buy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recovery Items -->
+        <div class="tab-pane fade" id="recovery" role="tabpanel" aria-labelledby="recovery-tab">
+            <div class="row">
+                {% for item in recovery_items %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card item-card shadow-sm {{ item.item_tier }}">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">{{ item.name }}</h5>
+                            <div class="item-tier">
+                                <span class="badge bg-tier-{{ item.item_tier }}">{{ item.item_tier|title }}</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="item-icon mb-2">
+                                <i data-feather="{{ item.icon }}"></i>
+                            </div>
+                            <p class="card-text">{{ item.description }}</p>
+                        </div>
+                        <div class="card-footer d-flex justify-content-between align-items-center">
+                            <div class="item-price">
+                                <i data-feather="dollar-sign" class="me-1"></i> {{ item.price }} coins
+                            </div>
+                            <button class="btn btn-primary btn-buy-item" data-item-id="{{ item.id }}">
+                                <i data-feather="shopping-cart" class="me-1"></i> Buy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Purchase result toast -->
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Define the confirmPurchase function in the global scope first
+    // This needs to be global because it's called from inline attributes
+    function confirmPurchase(itemId, button) {
+        const dialog = button.closest('.modal-dialog');
+        
+        // Disable the button to prevent multiple clicks
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+
+        // Send purchase request
+        fetch(`/api/store/buy/${itemId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                // Display error message
+                dialog.querySelector('.modal-body').innerHTML = `
+                    <div class="text-center">
+                        <i data-feather="alert-circle" class="text-danger mb-2" style="width: 48px; height: 48px;"></i>
+                        <p class="text-danger mb-0">${data.message}</p>
+                    </div>
+                `;
+                feather.replace();
+                
+                // Re-enable the button after showing error
+                button.disabled = false;
+                button.innerHTML = 'Confirm';
+                
+                // Don't auto-close on error
+            } else {
+                // Update user coins display in navbar and store header
+                const coinElements = document.querySelectorAll('.user-coins, #user-coins');
+                coinElements.forEach(element => {
+                    element.textContent = data.coins;
+                });
+
+                // Show success message in modal
+                dialog.querySelector('.modal-body').innerHTML = `
+                    <div class="text-center">
+                        <i data-feather="check-circle" class="text-success mb-2" style="width: 48px; height: 48px;"></i>
+                        <p class="text-success mb-0">${data.message}</p>
+                    </div>
+                `;
+                feather.replace();
+
+                // Update the UI if needed
+                if (data.redirect) {
+                    // If we need to redirect (e.g., to inventory)
+                    setTimeout(() => {
+                        window.location.href = data.redirect;
+                    }, 1500);
+                } else {
+                    // Close the dialog after a short delay
+                    setTimeout(() => {
+                        dialog.remove();
+                        // Force refresh the page to show updated inventory
+                        window.location.reload();
+                    }, 1500);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            dialog.querySelector('.modal-body').innerHTML = `
+                <div class="text-center">
+                    <i data-feather="alert-circle" class="text-danger mb-2" style="width: 48px; height: 48px;"></i>
+                    <p class="text-danger mb-0">An error occurred. Please try again.</p>
+                </div>
+            `;
+            feather.replace();
+            button.disabled = false;
+            button.innerHTML = 'Confirm';
+        });
+    }
+
+    // Store functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Feather icons
+        feather.replace();
+
+        // Get toast element if it exists
+        const purchaseToastElement = document.getElementById('purchaseToast');
+        if (purchaseToastElement) {
+            const purchaseToast = new bootstrap.Toast(purchaseToastElement);
+        }
+
+        // Setup purchase flow
+        const buyButtons = document.querySelectorAll('.btn-buy-item');
+
+        buyButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const itemId = this.dataset.itemId;
+                const itemName = this.closest('.card').querySelector('.card-title').textContent.trim();
+                const itemPrice = parseInt(this.closest('.card').querySelector('.item-price').textContent.match(/\d+/)[0]);
+
+                // Scroll to top smoothly
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+
+                // Create purchase confirmation dialog
+                const confirmDialog = document.createElement('div');
+                confirmDialog.className = 'modal-dialog';
+                confirmDialog.style.position = 'fixed';
+                confirmDialog.style.top = '50%';
+                confirmDialog.style.left = '50%';
+                confirmDialog.style.transform = 'translate(-50%, -50%)';
+                confirmDialog.style.zIndex = '1050';
+                confirmDialog.style.width = '90%';
+                confirmDialog.style.maxWidth = '500px';
+
+                confirmDialog.innerHTML = `
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Confirm Purchase</h5>
+                            <button type="button" class="btn-close" onclick="this.closest('.modal-dialog').remove()"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Are you sure you want to purchase ${itemName} for ${itemPrice} coins?</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="this.closest('.modal-dialog').remove()">Cancel</button>
+                            <button type="button" class="btn btn-primary" onclick="confirmPurchase(${itemId}, this)">Confirm</button>
+                        </div>
+                    </div>
+                `;
+
+                document.body.appendChild(confirmDialog);
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,610 @@
+{% extends "base.html" %}
+
+{% block title %}Inventory{% endblock %}
+
+{% block additional_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/store.css') }}">
+<style>
+    .hp-bar {
+        height: 25px;
+        border-radius: 5px;
+        background-color: #f8f9fa;
+        overflow: hidden;
+    }
+    
+    .hp-fill {
+        height: 100%;
+        background: linear-gradient(to right, #ff5f6d, #ff9966);
+        transition: width 0.5s ease-in-out;
+    }
+    
+    .buff-icon {
+        font-size: 1.2rem;
+        margin-right: 0.5rem;
+    }
+    
+    .buff-positive {
+        color: #28a745;
+    }
+    
+    .buff-negative {
+        color: #dc3545;
+    }
+    
+    .buff-timer {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .inventory-empty {
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #6c757d;
+    }
+    
+    .inventory-empty i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+    
+    .item-card .item-icon {
+        text-align: center;
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+    
+    .item-card .item-icon i {
+        padding: 15px;
+        border-radius: 50%;
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    .item-card.normal .item-icon i {
+        color: #6c757d;
+    }
+    
+    .item-card.advanced .item-icon i {
+        color: #007bff;
+    }
+    
+    .item-card.ultimate .item-icon i {
+        color: #dc3545;
+    }
+    
+    .bg-tier-normal {
+        background-color: #6c757d;
+        color: white;
+    }
+    
+    .bg-tier-advanced {
+        background-color: #007bff;
+        color: white;
+    }
+    
+    .bg-tier-ultimate {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .item-quantity {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+    
+    #user-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Header with HP Bar -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h1 class="mb-0">
+                            <i data-feather="package" class="me-2"></i>Inventory
+                        </h1>
+                        <div class="buff-status">
+                            {% if buff_effect != 0 %}
+                                {% if buff_effect > 0 %}
+                                <span class="badge bg-success">
+                                    <i data-feather="trending-up" class="me-1"></i> +{{ buff_effect }}% EXP
+                                </span>
+                                {% else %}
+                                <span class="badge bg-danger">
+                                    <i data-feather="trending-down" class="me-1"></i> {{ buff_effect }}% EXP
+                                </span>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="hp-status mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span><i data-feather="heart" class="text-danger me-1"></i> HP</span>
+                            <span id="hp-value">{{ user_hp }} / {{ user_max_hp }}</span>
+                        </div>
+                        <div class="hp-bar">
+                            <div class="hp-fill" style="width: {{ (user_hp / user_max_hp) * 100 }}%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Inventory Categories -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <ul class="nav nav-pills nav-fill" id="inventory-tabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="items-tab" data-bs-toggle="tab" data-bs-target="#items" type="button" role="tab" aria-controls="items" aria-selected="true">
+                        <i data-feather="package" class="me-2"></i>Items
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="buffs-tab" data-bs-toggle="tab" data-bs-target="#buffs" type="button" role="tab" aria-controls="buffs" aria-selected="false">
+                        <i data-feather="zap" class="me-2"></i>Active Effects
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Inventory Content -->
+    <div class="tab-content" id="inventoryTabContent">
+        <!-- Items Tab -->
+        <div class="tab-pane fade show active" id="items" role="tabpanel" aria-labelledby="items-tab">
+            {% if inventory_items %}
+            <div class="row">
+                {% for inv_item in inventory_items %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card item-card shadow-sm {{ inv_item.item.item_tier }} position-relative">
+                        <span class="item-quantity">{{ inv_item.quantity }}</span>
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">{{ inv_item.item.name }}</h5>
+                            <div class="item-tier">
+                                <span class="badge bg-tier-{{ inv_item.item.item_tier }}">{{ inv_item.item.item_tier|title }}</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="item-icon mb-2">
+                                <i data-feather="{{ inv_item.item.icon }}"></i>
+                            </div>
+                            <p class="card-text">{{ inv_item.item.description }}</p>
+                        </div>
+                        <div class="card-footer">
+                            {% if inv_item.item.item_type == 'debuff' %}
+                            <button class="btn btn-danger w-100 btn-apply-debuff" data-item-id="{{ inv_item.id }}" data-item-name="{{ inv_item.item.name }}">
+                                <i data-feather="user-minus" class="me-1"></i> Apply to User
+                            </button>
+                            {% else %}
+                            <button class="btn btn-primary w-100 btn-use-item" data-item-id="{{ inv_item.id }}" data-item-name="{{ inv_item.item.name }}" data-item-type="{{ inv_item.item.item_type }}">
+                                <i data-feather="zap" class="me-1"></i> Use
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="card">
+                <div class="card-body inventory-empty">
+                    <i data-feather="inbox"></i>
+                    <p>Your inventory is empty</p>
+                    <a href="{{ url_for('store') }}" class="btn btn-primary">
+                        <i data-feather="shopping-bag" class="me-1"></i> Visit Store
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Buffs Tab -->
+        <div class="tab-pane fade" id="buffs" role="tabpanel" aria-labelledby="buffs-tab">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Active Effects</h5>
+                    
+                    {% if active_buffs %}
+                    <ul class="list-group">
+                        {% for buff in active_buffs %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                {% if buff.buff_type == 'buff' %}
+                                <i data-feather="trending-up" class="buff-icon buff-positive"></i>
+                                <span>+{{ buff.effect_value }}% EXP gain</span>
+                                {% elif buff.buff_type == 'debuff' %}
+                                <i data-feather="trending-down" class="buff-icon buff-negative"></i>
+                                <span>-{{ buff.effect_value }}% EXP gain</span>
+                                <small class="text-muted">
+                                    {% if buff.applied_by %}
+                                    Applied by {{ buff.applied_by.username }}
+                                    {% endif %}
+                                </small>
+                                {% elif buff.buff_type == 'shield' %}
+                                <i data-feather="shield" class="buff-icon buff-positive"></i>
+                                <span>{% if buff.effect_value == 1 %}Ultimate Shield{% else %}Shield{% endif %} Protection</span>
+                                {% elif buff.buff_type == 'domain' %}
+                                <i data-feather="hexagon" class="buff-icon buff-negative"></i>
+                                <span>Domain Expansion ({{ buff.effect_value }} HP/min)</span>
+                                {% endif %}
+                            </div>
+                            
+                            {% if buff.expires_at %}
+                            <span class="buff-timer" data-expires="{{ buff.expires_at.isoformat() }}">
+                                Expires in <span class="time-remaining"></span>
+                            </span>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i data-feather="zap-off" style="width: 48px; height: 48px; color: #ccc;"></i>
+                        <p class="mt-3 text-muted">No active effects</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Use Item Confirmation Modal -->
+<div class="modal fade" id="useItemModal" tabindex="-1" aria-labelledby="useItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="useItemModalLabel">Use Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to use <span id="use-item-name"></span>?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirm-use-item">Use Item</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Apply Debuff Modal -->
+<div class="modal fade" id="debuffModal" tabindex="-1" aria-labelledby="debuffModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="debuffModalLabel">Apply Debuff</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Select a user to apply <span id="debuff-item-name"></span>:</p>
+                
+                <div class="form-group mb-3">
+                    <input type="text" class="form-control" id="user-search" placeholder="Search users...">
+                </div>
+                
+                <div id="user-list" class="list-group">
+                    <!-- User list will be populated dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Result Toast -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="resultToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i data-feather="package" class="me-2"></i>
+            <strong class="me-auto">Inventory</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="result-message">
+            <!-- Dynamic content inserted here -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Feather icons
+        feather.replace();
+        
+        // Setup modals
+        const useItemModal = new bootstrap.Modal(document.getElementById('useItemModal'));
+        const debuffModal = new bootstrap.Modal(document.getElementById('debuffModal'));
+        const resultToast = new bootstrap.Toast(document.getElementById('resultToast'));
+        
+        let currentItemId = null;
+        let currentItemType = null;
+        let usersList = [];
+        
+        // Handle "Use Item" button clicks
+        const useItemButtons = document.querySelectorAll('.btn-use-item');
+        useItemButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                currentItemId = this.dataset.itemId;
+                currentItemType = this.dataset.itemType;
+                
+                // Update confirmation modal
+                document.getElementById('use-item-name').textContent = this.dataset.itemName;
+                
+                // Show the modal
+                useItemModal.show();
+            });
+        });
+        
+        // Handle "Apply Debuff" button clicks
+        const applyDebuffButtons = document.querySelectorAll('.btn-apply-debuff');
+        applyDebuffButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                currentItemId = this.dataset.itemId;
+                
+                // Update debuff modal
+                document.getElementById('debuff-item-name').textContent = this.dataset.itemName;
+                
+                // Load users list
+                loadUsersList();
+                
+                // Show the modal
+                debuffModal.show();
+            });
+        });
+        
+        // Handle item use confirmation
+        document.getElementById('confirm-use-item').addEventListener('click', function() {
+            if (!currentItemId) return;
+            
+            // Send use item request
+            fetch(`/api/inventory/use/${currentItemId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide modal
+                useItemModal.hide();
+                
+                if (data.error) {
+                    // Show error message
+                    document.getElementById('result-message').textContent = data.error;
+                    document.getElementById('resultToast').classList.add('bg-danger', 'text-white');
+                } else {
+                    // Show success message
+                    document.getElementById('result-message').textContent = data.message;
+                    document.getElementById('resultToast').classList.remove('bg-danger', 'text-white');
+                    
+                    // Update HP bar if applicable
+                    if (data.hp !== undefined && data.max_hp !== undefined) {
+                        updateHPBar(data.hp, data.max_hp);
+                    }
+                    
+                    // Update buff effect if applicable
+                    if (data.buff_effect !== undefined) {
+                        updateBuffEffect(data.buff_effect);
+                    }
+                    
+                    // Reload page after a short delay to refresh inventory
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                }
+                
+                // Show toast
+                resultToast.show();
+            })
+            .catch(error => {
+                console.error('Error using item:', error);
+                useItemModal.hide();
+                document.getElementById('result-message').textContent = 'An error occurred. Please try again.';
+                document.getElementById('resultToast').classList.add('bg-danger', 'text-white');
+                resultToast.show();
+            });
+        });
+        
+        // Function to load users list for debuff application
+        function loadUsersList() {
+            const userListElement = document.getElementById('user-list');
+            userListElement.innerHTML = '<div class="text-center py-3"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+            
+            fetch('/api/users/list')
+            .then(response => response.json())
+            .then(data => {
+                usersList = data;
+                renderUsersList(data);
+                
+                // Setup search functionality
+                const searchInput = document.getElementById('user-search');
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    const filteredUsers = usersList.filter(user => 
+                        user.username.toLowerCase().includes(searchTerm)
+                    );
+                    renderUsersList(filteredUsers);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading users:', error);
+                userListElement.innerHTML = '<div class="alert alert-danger">Failed to load users</div>';
+            });
+        }
+        
+        // Function to render users list
+        function renderUsersList(users) {
+            const userListElement = document.getElementById('user-list');
+            userListElement.innerHTML = '';
+            
+            if (users.length === 0) {
+                userListElement.innerHTML = '<div class="text-center py-3">No users found</div>';
+                return;
+            }
+            
+            users.forEach(user => {
+                // Skip current user
+                if (user.id === {{ current_user.id }}) {
+                    return;
+                }
+                
+                const userItem = document.createElement('button');
+                userItem.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+                userItem.type = 'button';
+                userItem.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <img src="${user.avatar_url || '/static/default-avatar.png'}" class="rounded-circle me-3" width="40" height="40">
+                        <div>
+                            <strong>${user.username}</strong>
+                            <div class="text-muted">Level ${user.level} · Rank ${user.rank}</div>
+                        </div>
+                    </div>
+                    <span class="badge bg-primary">Apply</span>
+                `;
+                
+                userItem.addEventListener('click', function() {
+                    applyDebuffToUser(user.id, user.username);
+                });
+                
+                userListElement.appendChild(userItem);
+            });
+        }
+        
+        // Function to apply debuff to selected user
+        function applyDebuffToUser(userId, username) {
+            if (!currentItemId) return;
+            
+            fetch(`/api/inventory/apply_debuff/${currentItemId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    target_user_id: userId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide modal
+                debuffModal.hide();
+                
+                if (data.error) {
+                    // Show error message
+                    document.getElementById('result-message').textContent = data.error;
+                    document.getElementById('resultToast').classList.add('bg-danger', 'text-white');
+                } else {
+                    // Show success message
+                    document.getElementById('result-message').textContent = data.message;
+                    document.getElementById('resultToast').classList.remove('bg-danger', 'text-white');
+                    
+                    // Reload page after a short delay to refresh inventory
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                }
+                
+                // Show toast
+                resultToast.show();
+            })
+            .catch(error => {
+                console.error('Error applying debuff:', error);
+                debuffModal.hide();
+                document.getElementById('result-message').textContent = 'An error occurred. Please try again.';
+                document.getElementById('resultToast').classList.add('bg-danger', 'text-white');
+                resultToast.show();
+            });
+        }
+        
+        // Function to update HP bar
+        function updateHPBar(hp, maxHp) {
+            document.getElementById('hp-value').textContent = `${hp} / ${maxHp}`;
+            const percentage = (hp / maxHp) * 100;
+            document.querySelector('.hp-fill').style.width = `${percentage}%`;
+        }
+        
+        // Function to update buff effect display
+        function updateBuffEffect(buffEffect) {
+            const buffStatusElement = document.querySelector('.buff-status');
+            
+            if (buffEffect === 0) {
+                buffStatusElement.innerHTML = '';
+            } else if (buffEffect > 0) {
+                buffStatusElement.innerHTML = `
+                    <span class="badge bg-success">
+                        <i data-feather="trending-up" class="me-1"></i> +${buffEffect}% EXP
+                    </span>
+                `;
+            } else {
+                buffStatusElement.innerHTML = `
+                    <span class="badge bg-danger">
+                        <i data-feather="trending-down" class="me-1"></i> ${buffEffect}% EXP
+                    </span>
+                `;
+            }
+            
+            // Re-initialize feather icons
+            feather.replace();
+        }
+        
+        // Update remaining time for buffs
+        function updateBuffTimers() {
+            const timerElements = document.querySelectorAll('.buff-timer');
+            const now = new Date();
+            
+            timerElements.forEach(element => {
+                const expiresDate = new Date(element.dataset.expires);
+                const timeRemaining = expiresDate - now;
+                
+                if (timeRemaining <= 0) {
+                    element.querySelector('.time-remaining').textContent = 'Expired';
+                    element.classList.add('text-danger');
+                } else {
+                    // For Domain Expansion (24 minutes), we want to show minutes and seconds
+                    if (element.closest('li').textContent.includes('Domain Expansion')) {
+                        const minutes = Math.floor(timeRemaining / (1000 * 60));
+                        const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+                        element.querySelector('.time-remaining').textContent = `${minutes}m ${seconds}s`;
+                    } else {
+                        // For other buffs (still in hours)
+                        const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+                        const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+                        element.querySelector('.time-remaining').textContent = `${hours}h ${minutes}m`;
+                    }
+                }
+            });
+        }
+        
+        // Initial update of buff timers
+        updateBuffTimers();
+        
+        // Update buff timers every minute
+        setInterval(updateBuffTimers, 60000);
+    });
+</script>
+{% endblock %}

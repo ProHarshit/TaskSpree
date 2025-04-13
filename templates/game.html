@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Master Arena - Multiplayer Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/game.css') }}">
+</head>
+<body class="game-page">
+    <nav class="game-nav">
+        <div class="logo">TASK MASTER ARENA</div>
+        <div class="nav-items">
+            <a href="#" class="nav-item" id="statsBtn">📊 STATS</a>
+            <a href="#" class="nav-item" id="weaponsBtn">🎯 WEAPONS</a>
+            <a href="#" class="nav-item" id="leaderboardBtn">🏆 LEADERBOARD</a>
+            <a href="#" class="nav-item" id="accountBtn">👤 ACCOUNT</a>
+        </div>
+    </nav>
+
+    <div class="game-container">
+        <div class="weapon-select" id="weaponSelect">
+            <h3>SELECT WEAPON</h3>
+            <div class="weapon-grid">
+                <div class="weapon-card active" data-weapon="laser">
+                    <img src="{{ url_for('static', filename='images/laser-gun.svg') }}" alt="Laser Gun">
+                    <h4>LASER GUN</h4>
+                </div>
+                <div class="weapon-card" data-weapon="plasma">
+                    <img src="{{ url_for('static', filename='images/plasma-gun.svg') }}" alt="Plasma Gun">
+                    <h4>PLASMA GUN</h4>
+                </div>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+
+        <div class="game-controls">
+            <button id="playNowBtn" class="play-button">PLAY NOW</button>
+            <div class="controls-info">
+                <p>W A S D - Move</p>
+                <p>MOUSE - Aim & Shoot</p>
+                <p>SPACE - Jump</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+</body>
+</html>

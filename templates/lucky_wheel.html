@@ -1,0 +1,886 @@
+{% extends 'base.html' %}
+
+{% block title %}Lucky Wheel - Win EXP!{% endblock %}
+
+{% block head %}
+<style>
+    /* Main Wheel Container Styles */
+    .wheel-section {
+        background: linear-gradient(135deg, #2b2464 0%, #392d8e 50%, #55338e 100%);
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        overflow: hidden;
+        position: relative;
+        margin-bottom: 30px;
+    }
+    
+    .wheel-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.2)"/></svg>');
+        opacity: 0.3;
+    }
+    
+    .wheel-title {
+        text-align: center;
+        color: #fff;
+        margin-bottom: 20px;
+        font-size: 2rem;
+        text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    }
+    
+    .wheel-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        z-index: 1;
+    }
+    
+    /* Wheel Stand Design */
+    .wheel-stand {
+        width: 340px;
+        height: 50px;
+        background: linear-gradient(to bottom, #e6b000 0%, #997a00 100%);
+        border-radius: 5px;
+        position: relative;
+        margin-bottom: -10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        z-index: 0;
+    }
+    
+    .wheel-stand::before,
+    .wheel-stand::after {
+        content: '';
+        position: absolute;
+        width: 30px;
+        height: 60px;
+        background: linear-gradient(to bottom, #997a00 0%, #665200 100%);
+        bottom: 0;
+        border-radius: 5px;
+    }
+    
+    .wheel-stand::before {
+        left: 50px;
+        transform: skew(-15deg);
+    }
+    
+    .wheel-stand::after {
+        right: 50px;
+        transform: skew(15deg);
+    }
+    
+    /* Wheel Design */
+    .wheel-outer-ring {
+        width: 320px;
+        height: 320px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #ffd700 0%, #f8b500 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 
+            0 0 0 10px rgba(255, 255, 255, 0.1),
+            0 0 20px rgba(255, 215, 0, 0.5),
+            0 10px 20px rgba(0, 0, 0, 0.4);
+        position: relative;
+        z-index: 2;
+    }
+    
+    .wheel {
+        position: relative;
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
+        background: #1a1a2e;
+        box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.7);
+        overflow: hidden;
+        transition: transform 5s cubic-bezier(0.1, 0.7, 0.1, 1);
+        transform-origin: center;
+    }
+    
+    .wheel-center {
+        position: absolute;
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #e6b800 0%, #ffcc00 100%);
+        border-radius: 50%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+    
+    .wheel-center::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background: #fff;
+        border-radius: 50%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    
+    .wheel-segment {
+        position: absolute;
+        width: 50%;
+        height: 50%;
+        transform-origin: bottom right;
+        clip-path: polygon(0 0, 100% 0, 0 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
+    }
+    
+    .wheel-segment span {
+        position: absolute;
+        left: 20%;
+        top: 30%;
+        transform: rotate(45deg);
+        font-weight: bold;
+        font-size: 28px;
+        color: white;
+        text-shadow: 
+            -2px -2px 0 #000,
+            2px -2px 0 #000,
+            -2px 2px 0 #000,
+            2px 2px 0 #000,
+            0 0 10px rgba(0, 0, 0, 0.9);
+        font-family: 'Exo', sans-serif;
+        letter-spacing: 1.2px;
+        padding: 5px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 5px;
+        white-space: nowrap;
+    }
+    
+    /* Make text more visible on lighter segments */
+    .wheel-segment:nth-child(even) span {
+        background: rgba(0, 0, 0, 0.3);
+    }
+    
+    /* Wheel Pointer */
+    .wheel-pointer-container {
+        position: absolute;
+        top: -30px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 11;
+        filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.3));
+    }
+    
+    .wheel-pointer {
+        width: 40px;
+        height: 40px;
+        background: #f44336;
+        clip-path: polygon(50% 100%, 0 0, 100% 0);
+        position: relative;
+    }
+    
+    .wheel-pointer::after {
+        content: '';
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background: #fff;
+        border-radius: 50%;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    
+    /* Controls Area */
+    .wheel-controls {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 30px;
+    }
+    
+    .spin-btn {
+        padding: 15px 40px;
+        background: linear-gradient(135deg, #ff9d00, #ff5722);
+        color: white;
+        border: none;
+        border-radius: 30px;
+        font-size: 20px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        cursor: pointer;
+        box-shadow: 0 5px 15px rgba(255, 87, 34, 0.4);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .spin-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: all 0.8s ease;
+    }
+    
+    .spin-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(255, 87, 34, 0.6);
+    }
+    
+    .spin-btn:hover::before {
+        left: 100%;
+    }
+    
+    .spin-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 3px 10px rgba(255, 87, 34, 0.4);
+    }
+    
+    .spin-btn:disabled {
+        background: linear-gradient(135deg, #9e9e9e, #616161);
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: 0 3px 10px rgba(97, 97, 97, 0.3);
+    }
+    
+    .spin-btn:disabled::before {
+        display: none;
+    }
+    
+    /* Wheel Status */
+    .wheel-status {
+        margin-top: 20px;
+        padding: 15px 25px;
+        border-radius: 12px;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: white;
+        font-weight: 500;
+        max-width: 400px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .wheel-status p {
+        margin: 5px 0;
+    }
+    
+    .next-spin-date {
+        font-weight: bold;
+        color: #ffd700;
+        font-size: 1.1em;
+    }
+    
+    /* Reward Table Section */
+    .rewards-section {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        margin-top: 20px;
+    }
+    
+    .rewards-title {
+        color: #333;
+        margin-bottom: 15px;
+        text-align: center;
+        font-size: 1.5rem;
+        position: relative;
+        padding-bottom: 10px;
+    }
+    
+    .rewards-title::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100px;
+        height: 3px;
+        background: linear-gradient(90deg, #ff9d00, #ff5722);
+        border-radius: 3px;
+    }
+    
+    .exp-table {
+        width: 100%;
+        max-width: 400px;
+        margin: 15px auto;
+        border-collapse: separate;
+        border-spacing: 0;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        background: rgba(255, 255, 255, 0.95);
+    }
+    
+    .exp-table thead {
+        background: linear-gradient(135deg, #2b2464, #392d8e);
+        color: white;
+    }
+    
+    .exp-table th {
+        padding: 15px 25px;
+        text-align: center;
+        font-weight: bold;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        font-size: 0.9em;
+    }
+    
+    .exp-table td {
+        padding: 12px 25px;
+        text-align: center;
+        border-bottom: 1px solid rgba(224, 224, 224, 0.5);
+        transition: all 0.3s ease;
+    }
+    
+    .exp-table tr:hover td {
+        background-color: rgba(63, 81, 181, 0.05);
+        transform: translateY(-1px);
+    }
+    
+    .exp-table tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .exp-table tr:hover td {
+        background-color: #f5f5f5;
+    }
+    
+    .rank-badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-weight: bold;
+        font-size: 0.9em;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        min-width: 40px;
+    }
+    
+    .exp-value {
+        font-weight: bold;
+        font-size: 1.1em;
+        color: #ff5722;
+    }
+    
+    /* Rank Badge Colors */
+    .rank-e { 
+        background-color: #808080; 
+        color: white; 
+    }
+    
+    .rank-d { 
+        background-color: #8B4513; 
+        color: white; 
+    }
+    
+    .rank-c { 
+        background-color: #C0C0C0; 
+        color: black; 
+    }
+    
+    .rank-b { 
+        background-color: #FFD700; 
+        color: black; 
+    }
+    
+    .rank-a { 
+        background-color: #E5E4E2; 
+        color: black; 
+    }
+    
+    .rank-s { 
+        background-color: #B9F2FF; 
+        color: black; 
+    }
+    
+    .rank-s-plus { 
+        background: linear-gradient(45deg, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #4B0082, #8F00FF); 
+        color: white; 
+    }
+    
+    /* Reward Popup */
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(5px);
+        z-index: 999;
+        display: none;
+        animation: fadeIn 0.5s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .reward-popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.9);
+        background: linear-gradient(135deg, #303f9f 0%, #7b1fa2 100%);
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        text-align: center;
+        z-index: 1000;
+        display: none;
+        max-width: 90%;
+        width: 400px;
+        animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        overflow: hidden;
+    }
+    
+    @keyframes popIn {
+        from { 
+            transform: translate(-50%, -50%) scale(0.9);
+            opacity: 0;
+        }
+        to { 
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
+    }
+    
+    .reward-popup::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+        opacity: 0.5;
+        pointer-events: none;
+    }
+    
+    .reward-popup h2 {
+        margin-top: 0;
+        color: #ffffff;
+        font-size: 28px;
+        text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+    
+    .reward-popup p {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 18px;
+        margin-bottom: 5px;
+    }
+    
+    .reward-exp {
+        font-size: 48px;
+        font-weight: bold;
+        background: linear-gradient(90deg, #ffd700, #ffeb3b);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 20px 0;
+        filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.5));
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    #claim-reward-btn {
+        padding: 12px 30px;
+        background: linear-gradient(90deg, #43a047, #2e7d32);
+        color: white;
+        border: none;
+        border-radius: 30px;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(46, 125, 50, 0.4);
+        margin-top: 10px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    #claim-reward-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: all 0.8s ease;
+    }
+    
+    #claim-reward-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(46, 125, 50, 0.6);
+    }
+    
+    #claim-reward-btn:hover::before {
+        left: 100%;
+    }
+    
+    #claim-reward-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 10px rgba(46, 125, 50, 0.4);
+    }
+    
+    /* Animation for celebratory particles */
+    .confetti {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background: #ffd700;
+        animation: confetti-fall 4s ease-in-out infinite;
+        opacity: 0;
+    }
+    
+    @keyframes confetti-fall {
+        0% {
+            transform: translateY(-50px) rotate(0deg);
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(400px) rotate(360deg);
+            opacity: 0;
+        }
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .wheel-outer-ring, .wheel {
+            width: 250px;
+            height: 250px;
+        }
+        
+        .wheel-segment span {
+            font-size: 16px;
+        }
+        
+        .wheel-stand {
+            width: 270px;
+        }
+        
+        .wheel-pointer {
+            width: 30px;
+            height: 30px;
+        }
+        
+        .spin-btn {
+            padding: 12px 30px;
+            font-size: 18px;
+        }
+        
+        .reward-popup {
+            padding: 30px;
+            width: 320px;
+        }
+        
+        .reward-exp {
+            font-size: 36px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .wheel-outer-ring, .wheel {
+            width: 220px;
+            height: 220px;
+        }
+        
+        .wheel-stand {
+            width: 240px;
+        }
+        
+        .wheel-segment span {
+            font-size: 14px;
+            left: 25%;
+            top: 25%;
+        }
+        
+        .spin-btn {
+            padding: 10px 25px;
+            font-size: 16px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <!-- Main Wheel Section -->
+            <div class="wheel-section mt-4">
+                <h2 class="wheel-title">
+                    <i data-feather="gift" class="me-2"></i> Lucky Wheel
+                </h2>
+                
+                <div class="wheel-container">
+                    <!-- Wheel Pointer -->
+                    <div class="wheel-pointer-container">
+                        <div class="wheel-pointer"></div>
+                    </div>
+                    
+                    <!-- Wheel and Stand -->
+                    <div class="wheel-outer-ring">
+                        <div class="wheel" id="lucky-wheel">
+                            <!-- Wheel segments added via JavaScript -->
+                        </div>
+                        <div class="wheel-center"></div>
+                    </div>
+                    <div class="wheel-stand"></div>
+                    
+                    <!-- Controls Area -->
+                    <div class="wheel-controls">
+                        <button class="spin-btn" id="spin-button" {% if not can_spin %}disabled{% endif %}>
+                            Spin Now
+                        </button>
+                        
+                        <div class="wheel-status">
+                            {% if can_spin %}
+                                <p><i data-feather="check-circle" class="text-success"></i> You can spin the wheel once this week!</p>
+                            {% else %}
+                                <p><i data-feather="clock" class="text-warning"></i> You've already used your spin for this week.</p>
+                                <p>Next spin available on: <span class="next-spin-date">{{ next_spin_day }}</span></p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Rewards Information Section -->
+            <div class="rewards-section">
+                <h3 class="rewards-title">Possible EXP Rewards</h3>
+                <p class="text-center">Spin the wheel once per week for a chance to win bonus EXP!</p>
+                
+                <table class="exp-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>EXP Reward</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="rank-badge rank-s-plus">S+</span></td>
+                            <td><span class="exp-value">100 EXP</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="rank-badge rank-s">S</span></td>
+                            <td><span class="exp-value">80 EXP</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="rank-badge rank-a">A</span></td>
+                            <td><span class="exp-value">50 EXP</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="rank-badge rank-b">B</span></td>
+                            <td><span class="exp-value">40 EXP</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="rank-badge rank-c">C</span></td>
+                            <td><span class="exp-value">30 EXP</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="rank-badge rank-d">D</span></td>
+                            <td><span class="exp-value">20 EXP</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="rank-badge rank-e">E</span></td>
+                            <td><span class="exp-value">10 EXP</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="mt-4 text-center">
+                    <p class="text-muted"><i data-feather="info" class="me-1"></i> The wheel resets every Monday, allowing one spin per week.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reward Popup -->
+<div class="overlay" id="overlay"></div>
+<div class="reward-popup" id="reward-popup">
+    <h2>Congratulations!</h2>
+    <p>You just won:</p>
+    <div class="reward-exp" id="reward-exp-amount">100 EXP</div>
+    <button id="claim-reward-btn">Claim Reward</button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Rank rewards data - aligned with backend rank thresholds
+    const rankRewards = [
+        { rank: 'S+', exp: 100, color: 'linear-gradient(45deg, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #4B0082, #8F00FF)', threshold: 1500 },
+        { rank: 'S', exp: 80, color: '#B9F2FF', threshold: 1000 },
+        { rank: 'A', exp: 50, color: '#E5E4E2', threshold: 800 },
+        { rank: 'B', exp: 40, color: '#FFD700', threshold: 600 },
+        { rank: 'C', exp: 30, color: '#C0C0C0', threshold: 400 },
+        { rank: 'D', exp: 20, color: '#8B4513', threshold: 200 },
+        { rank: 'E', exp: 10, color: '#808080', threshold: 0 }
+    ];
+    
+    // Create wheel segments
+    const wheel = document.getElementById('lucky-wheel');
+    
+    // Calculate rotation angle for each segment
+    const segmentAngle = 360 / rankRewards.length;
+    
+    // Create wheel segments
+    rankRewards.forEach((reward, index) => {
+        const segment = document.createElement('div');
+        segment.className = 'wheel-segment';
+        segment.style.transform = `rotate(${index * segmentAngle}deg)`;
+        segment.style.background = reward.color;
+        
+        const label = document.createElement('span');
+        label.textContent = reward.exp;
+        segment.appendChild(label);
+        
+        wheel.appendChild(segment);
+    });
+    
+    // Spin button functionality
+    const spinButton = document.getElementById('spin-button');
+    const overlay = document.getElementById('overlay');
+    const rewardPopup = document.getElementById('reward-popup');
+    const rewardExpAmount = document.getElementById('reward-exp-amount');
+    const claimRewardBtn = document.getElementById('claim-reward-btn');
+    
+    // Check if button is enabled
+    if (spinButton && !spinButton.disabled) {
+        spinButton.addEventListener('click', spinWheel);
+    }
+    
+    // Create confetti effect for reward popup
+    function createConfetti() {
+        const confettiCount = 50;
+        const colors = ['#ffd700', '#ff5722', '#2196f3', '#4caf50', '#9c27b0', '#e91e63'];
+        
+        for (let i = 0; i < confettiCount; i++) {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + '%';
+            confetti.style.width = Math.random() * 10 + 5 + 'px';
+            confetti.style.height = confetti.style.width;
+            confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.animationDelay = Math.random() * 3 + 's';
+            rewardPopup.appendChild(confetti);
+        }
+    }
+    
+    // Function to spin the wheel
+    function spinWheel() {
+        // Play sound effect if available
+        if (typeof playSound === 'function') {
+            playSound('hover');
+        }
+        
+        // Add spinning animation class
+        spinButton.classList.add('spinning');
+        
+        // Disable the button during spin
+        spinButton.disabled = true;
+        
+        // Send request to the server to spin the wheel
+        fetch('/api/lucky-wheel/spin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Calculate the winning segment
+                const expReward = data.exp_reward;
+                const winningIndex = rankRewards.findIndex(reward => reward.exp === expReward);
+                
+                // Calculate the rotation degrees
+                // We add 360 * 5 to make it spin multiple times for dramatic effect
+                const rotationDegrees = (360 * 5) + (360 - (winningIndex * segmentAngle));
+                
+                // Animate the wheel
+                wheel.style.transition = 'transform 5s cubic-bezier(0.17, 0.67, 0.83, 0.67)';
+                wheel.style.transform = `rotate(${rotationDegrees}deg)`;
+                
+                // Play sound effect when wheel starts spinning
+                if (typeof playSound === 'function') {
+                    setTimeout(() => playSound('complete'), 5000);
+                }
+                
+                // Show the reward after the animation completes
+                setTimeout(() => {
+                    // Create confetti effects
+                    createConfetti();
+                    
+                    // Show overlay and popup
+                    overlay.style.display = 'block';
+                    rewardPopup.style.display = 'block';
+                    rewardExpAmount.textContent = `${expReward} EXP`;
+                }, 5000);
+            } else {
+                // Show error message
+                alert(data.message || 'An error occurred during the spin.');
+                spinButton.disabled = false;
+                spinButton.classList.remove('spinning');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred during the spin. Please try again.');
+            spinButton.disabled = false;
+            spinButton.classList.remove('spinning');
+        });
+    }
+    
+    // Claim reward button
+    claimRewardBtn.addEventListener('click', function() {
+        // Play sound effect if available
+        if (typeof playSound === 'function') {
+            playSound('hover');
+        }
+        
+        // Close the popup
+        overlay.style.display = 'none';
+        rewardPopup.style.display = 'none';
+        
+        // Remove confetti elements
+        const confettiElements = document.querySelectorAll('.confetti');
+        confettiElements.forEach(el => el.remove());
+        
+        // Reload the page to update the wheel status
+        window.location.reload();
+    });
+    
+    // Initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+});
+</script>
+{% endblock %}

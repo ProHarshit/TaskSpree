@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block title %}HP Test Page | TaskSpree{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="card mt-4 mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h2><i class="feather-heart"></i> HP Testing</h2>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <p><strong>Current HP:</strong> <span id="current-hp">{{ current_user.hp }}</span> / <span id="max-hp">{{ current_user.max_hp }}</span></p>
+                        <div class="progress mb-3">
+                            <div class="progress-bar bg-danger" role="progressbar" 
+                                 style="width: {{ (current_user.hp / current_user.max_hp) * 100 }}%;" 
+                                 aria-valuenow="{{ current_user.hp }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="{{ current_user.max_hp }}">
+                                {{ current_user.hp }} HP
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header bg-danger text-white">
+                                    <h4>Test HP Depletion</h4>
+                                </div>
+                                <div class="card-body">
+                                    <p>This will simulate HP reaching zero, which should deduct 200 EXP and restore HP to full.</p>
+                                    <button id="test-hp-depletion" class="btn btn-danger"><i class="feather-zap"></i> Test HP Depletion</button>
+                                    <div id="hp-depletion-result" class="mt-3"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header bg-warning text-dark">
+                                    <h4>Test Incomplete Tasks HP Penalty</h4>
+                                </div>
+                                <div class="card-body">
+                                    <p>This will trigger the check for incomplete tasks and apply HP penalties if there are any.</p>
+                                    <button id="test-incomplete-tasks" class="btn btn-warning text-dark"><i class="feather-file-minus"></i> Check Incomplete Tasks</button>
+                                    <div id="incomplete-tasks-result" class="mt-3"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header bg-primary text-white">
+                                    <h4>How HP Works</h4>
+                                </div>
+                                <div class="card-body">
+                                    <ul>
+                                        <li><strong>Max HP:</strong> 500 + (level - 1) * 10</li>
+                                        <li><strong>HP Penalties:</strong> Each uncompleted task will deduct HP at midnight based on task rank:
+                                            <ul>
+                                                <li>E Rank: 10 HP</li>
+                                                <li>D Rank: 20 HP</li>
+                                                <li>C Rank: 30 HP</li>
+                                                <li>B Rank: 40 HP</li>
+                                                <li>A Rank: 50 HP</li>
+                                                <li>S Rank: 80 HP</li>
+                                                <li>S+ Rank: 100 HP</li>
+                                            </ul>
+                                        </li>
+                                        <li><strong>HP Depletion:</strong> If HP reaches 0, you lose 200 EXP and your HP is restored to full</li>
+                                        <li><strong>Healing:</strong> Use potions from the store to restore HP</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Test HP Depletion
+        document.getElementById('test-hp-depletion').addEventListener('click', function() {
+            const resultDiv = document.getElementById('hp-depletion-result');
+            resultDiv.innerHTML = '<div class="spinner-border text-danger" role="status"><span class="visually-hidden">Loading...</span></div>';
+            
+            fetch('/api/test/hp-depletion', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const before = data.data.before;
+                    const after = data.data.after;
+                    const changes = data.data.changes;
+                    
+                    let html = '<div class="alert alert-success">';
+                    html += '<h5>HP Depletion Test Successful</h5>';
+                    html += '<p><strong>Before:</strong> HP: ' + before.hp + ', EXP: ' + before.exp + '</p>';
+                    html += '<p><strong>After:</strong> HP: ' + after.hp + ', EXP: ' + after.exp + '</p>';
+                    html += '<p><strong>Changes:</strong> HP: ' + changes.hp_change + ', EXP: ' + changes.exp_change + '</p>';
+                    html += '</div>';
+                    
+                    resultDiv.innerHTML = html;
+                    
+                    // Update the displayed HP values
+                    document.getElementById('current-hp').textContent = after.hp;
+                    const hpProgressBar = document.querySelector('.progress-bar');
+                    hpProgressBar.style.width = (after.hp / parseInt(document.getElementById('max-hp').textContent)) * 100 + '%';
+                    hpProgressBar.textContent = after.hp + ' HP';
+                } else {
+                    resultDiv.innerHTML = '<div class="alert alert-danger"><h5>Error</h5><p>' + data.error + '</p></div>';
+                }
+            })
+            .catch(error => {
+                resultDiv.innerHTML = '<div class="alert alert-danger"><h5>Error</h5><p>' + error.message + '</p></div>';
+            });
+        });
+        
+        // Test Incomplete Tasks Check
+        document.getElementById('test-incomplete-tasks').addEventListener('click', function() {
+            const resultDiv = document.getElementById('incomplete-tasks-result');
+            resultDiv.innerHTML = '<div class="spinner-border text-warning" role="status"><span class="visually-hidden">Loading...</span></div>';
+            
+            fetch('/api/test/check-incomplete-tasks', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    let html = '<div class="alert alert-success">';
+                    html += '<h5>Task Check Successful</h5>';
+                    html += '<p><strong>Current HP:</strong> ' + data.current_hp + ' / ' + data.max_hp + '</p>';
+                    html += '</div>';
+                    
+                    resultDiv.innerHTML = html;
+                    
+                    // Update the displayed HP values
+                    document.getElementById('current-hp').textContent = data.current_hp;
+                    const hpProgressBar = document.querySelector('.progress-bar');
+                    hpProgressBar.style.width = (data.current_hp / data.max_hp) * 100 + '%';
+                    hpProgressBar.textContent = data.current_hp + ' HP';
+                } else {
+                    resultDiv.innerHTML = '<div class="alert alert-danger"><h5>Error</h5><p>' + data.message + '</p></div>';
+                }
+            })
+            .catch(error => {
+                resultDiv.innerHTML = '<div class="alert alert-danger"><h5>Error</h5><p>' + error.message + '</p></div>';
+            });
+        });
+    });
+</script>
+{% endblock %}

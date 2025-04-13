@@ -1,0 +1,156 @@
+/* Store and Inventory Styling */
+
+/* Item cards styling */
+.item-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.item-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+.item-card .card-header {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.item-card .card-body {
+    flex: 1;
+}
+
+.item-card .item-icon {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.item-card .item-icon i {
+    padding: 15px;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Item tier styling */
+.item-card.normal {
+    border-top: 3px solid #6c757d;
+}
+
+.item-card.advanced {
+    border-top: 3px solid #007bff;
+}
+
+.item-card.ultimate {
+    border-top: 3px solid #dc3545;
+}
+
+.bg-tier-normal {
+    background-color: #6c757d;
+    color: white;
+}
+
+.bg-tier-advanced {
+    background-color: #007bff;
+    color: white;
+}
+
+.bg-tier-ultimate {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Item type styling */
+.item-card[data-type="healing"] .item-icon i {
+    color: #28a745;
+}
+
+.item-card[data-type="buff"] .item-icon i {
+    color: #007bff;
+}
+
+.item-card[data-type="debuff"] .item-icon i {
+    color: #dc3545;
+}
+
+.item-card[data-type="recovery"] .item-icon i {
+    color: #6f42c1;
+}
+
+/* Store tab styling */
+.nav-pills .nav-link {
+    border-radius: 50px;
+    padding: 0.5rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.nav-pills .nav-link:not(.active) {
+    color: #495057;
+}
+
+.nav-pills .nav-link:not(.active):hover {
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+/* HP Bar styling */
+.hp-bar {
+    height: 25px;
+    border-radius: 5px;
+    background-color: #f8f9fa;
+    overflow: hidden;
+}
+
+.hp-fill {
+    height: 100%;
+    background: linear-gradient(to right, #ff5f6d, #ff9966);
+    transition: width 0.5s ease-in-out;
+}
+
+/* Animation for purchase success */
+@keyframes purchase-success {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.purchase-success {
+    animation: purchase-success 0.5s ease-in-out;
+}
+
+/* Buff status indicators */
+.buff-status .badge {
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+}
+
+/* Empty inventory styling */
+.inventory-empty {
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+}
+
+.inventory-empty i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* Modal styling */
+.modal {
+    position: absolute;
+}
+
+.modal-content {
+    background-color: #222;
+    color: #fff;
+    border: 1px solid rgba(138, 43, 226, 0.2);
+    max-width: 400px;
+    width: 100%;
+}

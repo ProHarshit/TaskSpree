@@ -1,0 +1,295 @@
+/* Micro-interactions and Animation Effects for TaskSpree */
+
+/* ========= General Animation Utilities ========= */
+.hover-lift {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.hover-lift:hover {
+    transform: translateY(-4px);
+}
+
+.hover-scale {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.hover-scale:hover {
+    transform: scale(1.05);
+}
+
+/* ========= Micro-interaction Effects ========= */
+.micro-ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(0);
+    pointer-events: none;
+    z-index: 10;
+}
+
+.micro-ripple.active {
+    animation: ripple-effect 0.6s linear;
+}
+
+@keyframes ripple-effect {
+    0% { transform: scale(0); opacity: 0.3; }
+    100% { transform: scale(2); opacity: 0; }
+}
+
+/* ========= Button Effects ========= */
+.btn {
+    overflow: hidden;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+    position: relative;
+}
+
+.btn::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
+    opacity: 0;
+    transform: scale(2);
+    transition: opacity 0.5s, transform 0.5s;
+    pointer-events: none;
+}
+
+.btn:active::after {
+    opacity: 0.3;
+    transform: scale(0);
+    transition: 0s;
+}
+
+/* Enhanced glow effects for buttons */
+.btn-primary {
+    box-shadow: 0 0 15px rgba(138, 43, 226, 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-primary:hover {
+    box-shadow: 0 0 25px rgba(138, 43, 226, 0.5),
+                0 0 40px rgba(138, 43, 226, 0.2),
+                inset 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+/* ========= Task Item Interactions ========= */
+.task-item {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+    perspective: 1000px;
+}
+
+.task-completion-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: inherit;
+    z-index: 1;
+    background: radial-gradient(circle, rgba(40,167,69,0.3) 0%, rgba(40,167,69,0) 70%);
+    pointer-events: none;
+    animation: pulse-glow 1.5s infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.6; }
+}
+
+.task-progress-indicator {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    width: 0;
+    background: linear-gradient(90deg, #8A2BE2, #00BFFF);
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 2;
+}
+
+.task-item.completing {
+    border-color: rgba(40, 167, 69, 0.5);
+}
+
+/* ========= Form Input Interactions ========= */
+.form-control {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.form-control:focus {
+    transform: scale(1.01);
+    box-shadow: 0 0 15px rgba(138, 43, 226, 0.3),
+                inset 0 0 5px rgba(138, 43, 226, 0.1);
+}
+
+/* ========= Particle System ========= */
+#particle-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0; /* Just above background, below content */
+    mix-blend-mode: screen; /* Makes particles blend better with dark backgrounds */
+}
+
+/* ========= Confetti Celebration ========= */
+#confetti-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+}
+
+/* ========= Status Badges Animation ========= */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: bold;
+    position: relative;
+}
+
+.status-badge::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border-radius: inherit;
+    background: inherit;
+    filter: blur(8px);
+    opacity: 0.4;
+    z-index: -1;
+}
+
+/* ========= Hover Effects for UI Elements ========= */
+.hover-glow {
+    transition: filter 0.3s ease;
+}
+
+.hover-glow:hover {
+    filter: brightness(1.2) drop-shadow(0 0 5px rgba(138, 43, 226, 0.5));
+}
+
+/* Magnetic effect for interactive elements */
+.magnetic-effect {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ========= Loading and Transition Animations ========= */
+@keyframes scanning {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.scan-effect::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transform: translateX(-100%);
+    animation: scanning 2s infinite;
+    pointer-events: none;
+}
+
+/* ========= 3D Transform Effects ========= */
+.tilt-effect {
+    transform-style: preserve-3d;
+    transition: transform 0.3s ease;
+}
+
+/* ========= Achievement unlock effects ========= */
+.achievement-unlocked {
+    animation: unlock-pulse 1.5s ease-in-out;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+}
+
+@keyframes unlock-pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0px rgba(255, 215, 0, 0); }
+    50% { transform: scale(1.2); box-shadow: 0 0 30px rgba(255, 215, 0, 0.8); }
+    100% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
+}
+
+/* ========= EXP Gain Animation ========= */
+.exp-gain-aura {
+    position: absolute;
+    pointer-events: none;
+    z-index: 1000;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.6) 0%, rgba(255, 215, 0, 0) 70%);
+    animation: exp-aura 2s forwards;
+}
+
+@keyframes exp-aura {
+    0% { transform: scale(0.5); opacity: 0.8; }
+    100% { transform: scale(3); opacity: 0; }
+}
+
+/* ========= Floating particles effect ========= */
+.floating-particle {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: rgba(138, 43, 226, 0.5);
+    pointer-events: none;
+    z-index: 0;
+    animation: float-up 6s infinite ease-in-out;
+}
+
+@keyframes float-up {
+    0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+}
+
+/* ========= Audio Control Interactions ========= */
+.audio-controls {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.audio-controls:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(138, 43, 226, 0.4);
+}
+
+/* ========= Completed Tasks Effects ========= */
+.completed-badge {
+    position: relative;
+    display: inline-block;
+}
+
+.completed-badge::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: currentColor;
+    transition: width 0.3s ease;
+}
+
+.completed-badge.animate::after {
+    width: 100%;
+}
